@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Manage Staff</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body { background: #f0f2f5; }
+        .admin-header { background: linear-gradient(135deg, #00194A, #000); color: white; padding: 30px; border-radius: 20px; margin-bottom: 30px; }
+        .staff-card { background: white; border-radius: 16px; padding: 16px; margin-bottom: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+        .code { font-family: monospace; font-size: 1.3rem; letter-spacing: 2px; background: #007749; color: white; padding: 4px 12px; border-radius: 40px; }
+    </style>
+</head>
+<body>
+<div class="container py-4">
+    <div class="admin-header">
+        <h1><i class="fas fa-shield-alt me-2"></i>Management Admin</h1>
+        <p>Add staff members and generate access codes</p>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-5">
+            <div class="card border-0 rounded-4 shadow-sm">
+                <div class="card-body p-4">
+                    <h4><i class="fas fa-user-plus text-success me-2"></i>Add New Staff</h4>
+                    <input type="text" id="name" class="form-control mb-2 rounded-4" placeholder="Full Name">
+                    <input type="text" id="dept" class="form-control mb-2 rounded-4" placeholder="Department">
+                    <select id="type" class="form-select mb-3 rounded-4">
+                        <option value="false">Standard Staff</option>
+                        <option value="true">Tiangmaatla Management</option>
+                    </select>
+                    <button id="addBtn" class="btn btn-success w-100 rounded-4 py-2"><i class="fas fa-magic me-2"></i>Generate Code & Add</button>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-7">
+            <div class="card border-0 rounded-4 shadow-sm">
+                <div class="card-body p-4">
+                    <h4><i class="fas fa-users me-2"></i>Registered Staff</h4>
+                    <div id="staffList"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const SUPABASE_URL = "https://rqbjgoevotkaipwoakvj.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJxYmpnb2V2b3RrYWlwd29ha3ZqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg2NDgyODMsImV4cCI6MjA5NDIyNDI4M30.RIP0G32F12Fnf9v5ZiTE5RfEqSHEdpP58iuXxK8803Q";
+    const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    
+    if (!window.location.search.includes('admin=2030')) {
+        document.body.innerHTML = '<div class="container text-center py-5"><i class="fas fa-lock fa-4x mb-3"></i><h2>Access Denied</h2></div>';
+    }
+    
+    function generateCode() { return Math.floor(1000 + Math.random() * 9000).toString(); }
+    
+    async function addStaff() {
+        const name = document.getElementById('name').value.trim();
+        const dept = document.getElementById('dept').value.trim();
+        const isMgmt = document.getElementById('type').value === 'true';
+        if (!name || !dept) { alert("Fill all fields"); return; }
+        
+        const code = generateCode();
+        const { error } = await db.from('management_staff').insert([{
+            full_name: name, department: dept, access_code: code, is_tiangmaatla: isMgmt
+        }]);
+        if (error) { alert("Error: " + error.message); return; }
+        alert(`✅ Added ${name}\nAccess Code: ${code}\n\nShare this code with them.`);
+        document.getElementById('name').value = '';
+        document.getElementById('dept').value = '';
+        loadStaff();
+    }
+    
+    async function loadStaff() {
+        const { data } = await db.from('management_staff').select('*').order('created_at', { ascending: false });
+        if (!data) return;
+        document.getElementById('staffList').innerHTML = data.map(s => `
+            <div class="staff-card d-flex justify-content-between align-items-center">
+                <div><strong>${escapeHtml(s.full_name)}</strong><br><small class="text-muted">${escapeHtml(s.department)} ${s.is_tiangmaatla ? '👑 Tiangmaatla' : ''}</small></div>
+                <div class="code">${s.access_code}</div>
+            </div>
+        `).join('');
+    }
+    
+    function escapeHtml(str) { return str.replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m])); }
+    
+    document.getElementById('addBtn').addEventListener('click', addStaff);
+    loadStaff();
+</script>
+</body>
+</html>

@@ -1,0 +1,1540 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
+    <title>Tiangmaatla chats</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        :root {
+            --sa-green: #007749;
+            --sa-blue: #00194A;
+            --sa-yellow: #FFB612;
+            --sa-red: #E03C31;
+            --chat-bg: #f0f2f5;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, sans-serif;
+            background: var(--chat-bg);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            position: fixed;
+            width: 100%;
+        }
+
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png');
+            background-repeat: repeat;
+            opacity: 0.20;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .header-bar {
+            height: 4px;
+            background: linear-gradient(90deg, var(--sa-green) 25%, var(--sa-yellow) 25%, var(--sa-yellow) 50%, var(--sa-red) 50%, var(--sa-red) 75%, var(--sa-blue) 75%);
+        }
+
+        .navbar {
+            background: var(--sa-blue);
+            padding: 10px 12px;
+            position: fixed;
+            top: 4px;
+            left: 0;
+            right: 0;
+            z-index: 1030;
+        }
+
+        .navbar-brand {
+            color: white !important;
+            font-weight: 600;
+            font-size: 1rem;
+        }
+
+        .navbar-brand i {
+            color: var(--sa-yellow);
+        }
+
+        .user-badge {
+            background: rgba(255,255,255,0.12);
+            border-radius: 40px;
+            padding: 5px 12px;
+            color: white;
+            font-size: 0.7rem;
+            font-weight: 500;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 48vw;
+        }
+
+        .online-stats {
+            background: rgba(0,0,0,0.7);
+            backdrop-filter: blur(6px);
+            border-radius: 40px;
+            padding: 4px 14px;
+            font-size: 0.7rem;
+            font-weight: 500;
+            color: white;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-left: 8px;
+            white-space: nowrap;
+        }
+        .online-stats i {
+            color: #2ecc71;
+            font-size: 0.7rem;
+            animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse {
+            0% { opacity: 0.4; transform: scale(0.8);}
+            100% { opacity: 1; transform: scale(1);}
+        }
+
+        .chat-main {
+            flex: 1;
+            overflow-y: auto;
+            padding: 95px 10px 80px 10px;
+            position: relative;
+        }
+
+        .chat-main::before {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png');
+            background-repeat: repeat;
+            opacity: 0.2;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .chat-container {
+            position: relative;
+            z-index: 1;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .dept-selector {
+            position: fixed;
+            top: 70px;  
+            right: 12px;
+            z-index: 1040;  
+            background: white;
+            backdrop-filter: blur(8px);
+            border-radius: 60px;
+            padding: 6px 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+        .dept-selector i { color: var(--sa-green); font-size: 0.8rem; }
+        .dept-selector select {
+            border: none;
+            background: white;
+            font-weight: 600;
+            color: var(--sa-blue);
+            outline: none;
+            font-size: 0.75rem;
+            padding: 6px 8px;
+            cursor: pointer;
+            font-family: inherit;
+            border-radius: 40px;
+            appearance: none;
+            -webkit-appearance: none;
+            background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23007749' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'></polyline></svg>");
+            background-repeat: no-repeat;
+            background-position: right 8px center;
+            padding-right: 28px;
+        }
+
+        .specific-dept-selector {
+            position: fixed;
+            top: 118px; 
+            right: 12px;
+            z-index: 1040;
+            background: white;
+            backdrop-filter: blur(8px);
+            border-radius: 60px;
+            padding: 6px 16px;
+            display: none;
+            align-items: center;
+            gap: 10px;
+        }
+        .specific-dept-selector.active { display: flex; }
+        .specific-dept-selector i { color: var(--sa-green); }
+        .specific-dept-selector select {
+            border: none;
+            background: white;
+            font-weight: 500;
+            color: var(--sa-blue);
+            outline: none;
+            font-size: 0.75rem;
+            padding: 6px 8px;
+            cursor: pointer;
+            font-family: inherit;
+            border-radius: 40px;
+            appearance: none;
+            -webkit-appearance: none;
+            background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23007749' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'></polyline></svg>");
+            background-repeat: no-repeat;
+            background-position: right 8px center;
+            padding-right: 28px;
+        }
+
+        .vote-mode-indicator {
+            position: fixed;
+            bottom: 85px;
+            right: 12px;
+            background: var(--sa-green);
+            color: white;
+            padding: 5px 12px;
+            border-radius: 40px;
+            font-size: 0.65rem;
+            display: none;
+            z-index: 1026;
+            font-weight: 500;
+            pointer-events: none;
+        }
+        .vote-mode-indicator.active { display: block; }
+
+        .message {
+            display: flex;
+            margin-bottom: 14px;
+            animation: fadeIn 0.2s ease;
+        }
+
+        .message.outgoing { justify-content: flex-end; }
+        .message.incoming { justify-content: flex-start; }
+
+        .bubble {
+            margin-top: 20px;
+            max-width: 82%;
+            background: white;
+            border-radius: 22px;
+            padding: 8px 14px;
+        }
+
+        .outgoing .bubble { background: #dcf8c5; border-bottom-right-radius: 6px; }
+        .incoming .bubble { background: white; border-bottom-left-radius: 6px; }
+
+        .author {
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: var(--sa-green);
+            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            flex-wrap: wrap;
+        }
+
+        .dept-tag {
+            font-size: 0.6rem;
+            background: #e9ecef;
+            padding: 2px 8px;
+            border-radius: 30px;
+            font-weight: 400;
+        }
+
+        .tiangmaatla-tag {
+            background: var(--sa-yellow);
+            color: #000;
+        }
+
+        .message-text {
+            padding: 8px 0 10px 0;
+            font-size: 0.9rem;
+            line-height: 1.4;
+            word-wrap: break-word;
+            white-space: pre-wrap;
+        }
+
+        .message-img {
+            max-width: 100%;
+            border-radius: 16px;
+            margin-top: 6px;
+            cursor: pointer;
+            max-height: 180px;
+        }
+
+        .time {
+            font-size: 0.6rem;
+            color: #6c757d;
+            text-align: right;
+            margin-top: 4px;
+        }
+
+        .avatar {
+            margin-top: 20px;
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--sa-green));
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            flex-shrink: 0;
+            font-size: 0.9rem;
+        }
+
+        .vote-box {
+            background: #eef3fc;
+            border-radius: 20px;
+            padding: 10px;
+            margin-top: 8px;
+        }
+
+        .vote-option {
+            background: white;
+            border-radius: 40px;
+            padding: 8px 14px;
+            margin: 6px 0;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid #dee2e6;
+            font-size: 0.85rem;
+        }
+
+        .vote-count { font-weight: 700; color: var(--sa-green); }
+
+        .input-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(255,255,255,0.96);
+            backdrop-filter: blur(4px);
+            padding: 10px 12px;
+            border-top: 0.5px solid rgba(0,0,0,0.06);
+            z-index: 1020;
+        }
+
+        .input-primary {
+            display: flex;
+            align-items: flex-end;
+            gap: 8px;
+            width: 100%;
+        }
+
+        .input-field {
+            flex: 1;
+            border: 1px solid #e2e8f0;
+            border-radius: 28px;
+            padding: 10px 16px;
+            font-family: inherit;
+            font-size: 0.95rem;
+            resize: none;
+            max-height: 100px;
+            background: #ffffff;
+        }
+
+        .input-field:focus {
+            outline: none;
+            border-color: var(--sa-green);
+        }
+
+        .send-btn {
+            background: var(--sa-green);
+            color: white;
+            border-radius: 50%;
+            width: 46px;
+            height: 46px;
+            border: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            flex-shrink: 0;
+            transition: 0.1s;
+        }
+        .send-btn:active { transform: scale(0.94); }
+
+        .expand-toggle {
+            background: #f0f2f5;
+            border: none;
+            border-radius: 40px;
+            width: 46px;
+            height: 46px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.3rem;
+            color: var(--sa-green);
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+
+        .action-drawer {
+            max-height: 0;
+            opacity: 0;
+            overflow: hidden;
+            transition: max-height 0.28s cubic-bezier(0.2, 0.9, 0.4, 1.1), opacity 0.2s;
+            margin-top: 0px;
+            visibility: hidden;
+        }
+        .action-drawer.open {
+            max-height: 160px;
+            opacity: 1;
+            margin-top: 12px;
+            visibility: visible;
+        }
+
+        .icon-strip {
+            display: flex;
+            align-items: center;
+            justify-content: space-around;
+            gap: 16px;
+            background: #ffffffdd;
+            backdrop-filter: blur(8px);
+            padding: 8px 16px;
+            border-radius: 60px;
+        }
+
+        .action-icon {
+            background: transparent;
+            border: none;
+            font-size: 1.4rem;
+            color: #2c3e50;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 50%;
+            transition: 0.1s;
+        }
+        .action-icon:active { background: rgba(0,0,0,0.05); transform: scale(0.95); }
+
+        .image-panel {
+            margin-top: 12px;
+            display: flex;
+            gap: 8px;
+            background: white;
+            padding: 10px 14px;
+            border-radius: 48px;
+            align-items: center;
+            width: 100%;
+        }
+        .image-panel input { flex: 1; font-size: 0.85rem; padding: 8px 12px; }
+
+        .join-panel {
+            background: white;
+            border-radius: 32px;
+            padding: 32px 24px;
+            max-width: 380px;
+            margin: 20px auto;
+            text-align: center;
+        }
+        .code-input {
+            font-size: 1.8rem;
+            letter-spacing: 6px;
+            text-align: center;
+            font-weight: 700;
+            font-family: monospace;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(6px);}
+            to { opacity: 1; transform: translateY(0);}
+        }
+
+        #emojiPicker {
+            position: fixed;
+            bottom: 90px;
+            left: 12px;
+            background: white;
+            border-radius: 24px;
+            display: none;
+            width: 280px;
+            max-height: 300px;
+            overflow-y: auto;
+            padding: 12px;
+            z-index: 1100;
+        }
+        #votePopup { z-index: 1101; }
+
+        @media (max-width: 600px) {
+            .dept-selector, .specific-dept-selector {
+                padding: 4px 12px;
+            }
+            .dept-selector select, .specific-dept-selector select {
+                font-size: 0.7rem;
+                padding: 4px 6px;
+                padding-right: 24px;
+            }
+            .chat-main {
+                padding: 100px 8px 80px 8px;
+            }
+        }
+
+        .reaction-container{
+    margin-top:8px;
+}
+
+.reaction-buttons{
+    display:flex;
+    gap:6px;
+    flex-wrap:wrap;
+    margin-top:4px;
+}
+
+.reaction-btn {
+    border: none;
+    background: #f5f7fa;
+    border-radius: 20px;
+    padding: 4px 8px;
+    font-size: 16px;
+    min-width: 36px;
+    height: 32px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: 0.2s ease;
+}
+
+.reaction-btn:hover {
+    background: #e9ecef;
+    transform: scale(1.05);
+}
+
+.reaction-counts{
+    margin-top:6px;
+    display:flex;
+    gap:6px;
+    flex-wrap:wrap;
+}
+
+.reaction-pill{
+    background:#eef3fc;
+    border-radius:20px;
+    padding:3px 8px;
+    font-size:0.75rem;
+    font-weight:600;
+}
+
+.typing-box{
+    padding:8px 14px;
+    color:#666;
+    font-size:0.8rem;
+    font-style:italic;
+}
+
+.dots span{
+    animation: blink 1.4s infinite;
+}
+
+.dots span:nth-child(2){
+    animation-delay:.2s;
+}
+
+.dots span:nth-child(3){
+    animation-delay:.4s;
+}
+
+@keyframes blink{
+    0%,100%{opacity:0.2;}
+    50%{opacity:1;}
+}
+
+.avatar {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    overflow: hidden;
+    background: linear-gradient(135deg, #007749, #00a86b);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: bold;
+    flex-shrink: 0;
+    font-size: 0.9rem;
+    border: 2px solid white;
+}
+
+.profile-btn{
+    width:40px;
+    height:40px;
+    border:none;
+    border-radius:50%;
+    background:rgba(255,255,255,0.12);
+    color:white;
+    font-size:1.2rem;
+    cursor:pointer;
+}
+
+.profile-modal{
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,0.65);
+    display:none;
+    align-items:center;
+    justify-content:center;
+    z-index:3000;
+}
+
+.profile-modal.active{
+    display:flex;
+}
+
+.profile-modal-content{
+    background:white;
+    width:90%;
+    max-width:360px;
+    border-radius:24px;
+    padding:24px;
+    position:relative;
+    animation:fadeIn .2s ease;
+}
+
+.close-profile-btn{
+    position:absolute;
+    top:12px;
+    right:12px;
+    border:none;
+    background:#f0f2f5;
+    width:34px;
+    height:34px;
+    border-radius:50%;
+    cursor:pointer;
+}
+
+.attachment-panel {
+    display: none;
+    position: absolute;
+    bottom: 70px;
+    left: 10px;
+    right: 10px;
+    background: white;
+    padding: 12px;
+    border-radius: 16px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+    z-index: 999;
+}
+
+.action-btn {
+    width: 42px;
+    height: 42px;
+    border: none;
+    border-radius: 50%;
+    background: #f5f7fa;
+    color: #007749;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.action-btn:hover {
+    background: #007749;
+    color: white;
+    transform: scale(1.06);
+}
+
+.action-btn:active {
+    transform: scale(0.96);
+}
+
+@media (max-width: 767px) {
+    #deptSelector {
+        top: 10px !important;
+    }
+}
+    </style>
+</head>
+<body>
+<div class="header-bar"></div>
+<nav class="navbar">
+    <div class="container-fluid d-flex justify-content-between align-items-center px-2">
+        <a class="navbar-brand" href="#" onclick="goFullScreen()">
+            <i class="fas fa-comments me-1"></i>
+            Tiangmaatla chats
+        </a>    
+        <div class="d-flex align-items-center gap-2">
+            <div id="onlineUsersBadge" class="online-stats"><i class="fas fa-circle"></i> <span id="onlineCount">0</span> online</div>
+            <div id="userInfo" class="user-badge"><i class="fas fa-id-card me-1"></i><span id="userName">Not logged in</span></div>
+            <button id="profileBtn" class="profile-btn">
+                <i class="fas fa-user-circle"></i>
+            </button>
+        </div>
+    </div>
+</nav>
+
+<div id="deptSelector" class="dept-selector" style="display: none;">
+    <i class="fas fa-paper-plane"></i>
+    <select id="recipientSelect">
+        <option value="all">All Dept</option>
+        <option value="my">My Dept</option>
+        <option value="specific">Specific Dept</option>
+    </select>
+</div>
+<div id="specificDeptSelector" class="specific-dept-selector">
+    <i class="fas fa-building"></i>
+    <select id="targetDeptSelect"><option value="">Select department...</option></select>
+</div>
+<div id="voteIndicator" class="vote-mode-indicator"><i class="fas fa-chart-simple me-1"></i> Poll mode</div>
+
+<div class="chat-main" id="chatMain">
+    <div class="chat-container">
+        <div id="loginPanel">
+            <div class="join-panel">
+                <i class="fas fa-key fa-2x mb-2" style="color: var(--sa-green);"></i>
+                <h5>Access code</h5>
+                <p class="text-muted small">4-digit code</p>
+                <input type="text" id="accessCode" class="form-control code-input mb-3" maxlength="4" placeholder="0000" autocomplete="off" inputmode="numeric">
+                <button id="loginBtn" class="btn w-100 py-2" style="background: var(--sa-green); color: white; border-radius: 40px;">Enter Chat</button>
+                <hr class="my-3">
+                <small class="text-muted">secure team access</small>
+            </div>
+        </div>
+
+        <div id="chatArea" style="display: none;">
+            <div class="mb-2">
+                <input
+                    type="text"
+                    id="searchInput"
+                    class="form-control"
+                    placeholder="Search messages..."
+                >
+            </div>
+            <div id="messagesList"></div>
+            <div id="typingIndicator" class="typing-box" style="display:none;">
+            <span id="typingText">Someone is typing</span>
+            <span class="dots">
+                <span>.</span><span>.</span><span>.</span>
+            </span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="input-bar" id="inputBar" style="display: none;">
+    <div id="replyPreview" style="display:none;background:#f1f3f5;padding:8px;border-radius:8px;margin-bottom:8px;">
+   <div id="replyText"></div>
+
+   <button onclick="cancelReply()" style="border:none;background:none;color:red;font-size:12px;">
+      Cancel
+   </button>
+</div>
+    <div class="input-primary">
+        <textarea id="messageInput" class="input-field" rows="1" placeholder="Type message..."></textarea>
+        <button id="expandBtn" class="expand-toggle" title="More actions"><i class="fas fa-plus-circle"></i></button>
+        <button id="sendBtn" class="send-btn" type="button"><i class="fas fa-paper-plane"></i></button>
+    </div>
+    <div id="actionDrawer" class="action-drawer">
+        <div class="icon-strip">
+            <button id="emojiBtn" class="action-icon" title="Emoji"><i class="far fa-smile-wink"></i></button>
+            <button id="imageBtn" class="action-icon" title="Image URL"><i class="fas fa-image"></i></button>
+            <button id="docBtn" class="action-btn" title="Send document">
+                <i class="fas fa-file-alt"></i>
+            </button>
+
+            <button id="voteToggleBtn" class="action-icon" title="Create poll"><i class="fas fa-chart-simple"></i></button>
+            <button id="voiceBtn" class="action-btn" title="Voice note">
+                <i class="fas fa-microphone"></i>
+            </button>
+        </div>
+        <div id="imagePanel" style="display: none;" class="image-panel">
+            <input type="text" id="imageUrlInput" class="form-control form-control-sm" placeholder="Paste image URL...">
+            <button id="confirmImageBtn" class="btn btn-sm btn-success">Add</button>
+            <button id="closeImageBtn" class="btn btn-sm btn-outline-secondary">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<div id="docPanel" class="attachment-panel">
+    <input
+        type="text"
+        id="docUrlInput"
+        class="form-control mb-2"
+        placeholder="Paste PDF or document URL"
+    >
+    <button id="confirmDocBtn" class="btn btn-primary w-100">
+        Send Document
+    </button>
+</div>
+
+<div id="voicePanel" style="
+    display:none;
+    position:fixed;
+    bottom:90px;
+    left:50%;
+    transform:translateX(-50%);
+    width:90%;
+    max-width:350px;
+    background:white;
+    padding:15px;
+    border-radius:16px;
+    box-shadow:0 5px 20px rgba(0,0,0,0.15);
+    z-index:9999;
+">
+    <button id="startRecordBtn" class="btn btn-success w-100 mb-2">
+        Start Recording
+    </button>
+
+    <button id="stopRecordBtn" class="btn btn-danger w-100 mb-2">
+        Stop Recording
+    </button>
+
+    <audio id="audioPreview"
+        controls
+        style="display:none;width:100%;margin-top:10px;">
+    </audio>
+
+    <button id="sendVoiceBtn"
+        class="btn btn-primary w-100 mt-2"
+        style="display:none;">
+        Send Voice Note
+    </button>
+</div>
+
+<div id="votePopup" style="display: none; position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%); background: white; border-radius: 28px; padding: 18px; width: 90%; max-width: 340px; z-index: 1100;">
+    <h6 class="mb-2"><i class="fas fa-chart-simple me-2"></i>New poll</h6>
+    <input type="text" id="voteOptionA" class="form-control mb-2" placeholder="Option A">
+    <input type="text" id="voteOptionB" class="form-control mb-2" placeholder="Option B">
+    <div class="d-flex gap-2 mt-2">
+        <button id="submitVoteBtn" class="btn btn-success flex-grow-1">Post Poll</button>
+        <button id="cancelVoteBtn" class="btn btn-outline-secondary">Cancel</button>
+    </div>
+</div>
+
+<div id="imageModal" style="position: fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.9); z-index:2000; display:none; align-items:center; justify-content:center; cursor:pointer;">
+    <img id="modalImage" style="max-width:90%; max-height:90%; border-radius:20px;">
+</div>
+<div id="emojiPicker">
+    <div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px;" id="emojiGrid"></div>
+</div>
+
+<div id="profileModal" class="profile-modal">
+    <div class="profile-modal-content">
+        <button id="closeProfileModal" class="close-profile-btn">
+            <i class="fas fa-times"></i>
+        </button>
+
+        <h5 class="mb-3">Update Profile Image</h5>
+
+        <input
+            type="text"
+            id="profileImageInput"
+            class="form-control mb-3"
+            placeholder="Paste profile image URL"
+        >
+
+        <button onclick="saveProfileImage()" class="btn btn-success w-100">
+            Save Profile Image
+        </button>
+    </div>
+</div>
+
+<script>
+    const SUPABASE_URL = "https://rqbjgoevotkaipwoakvj.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJxYmpnb2V2b3RrYWlwd29ha3ZqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg2NDgyODMsImV4cCI6MjA5NDIyNDI4M30.RIP0G32F12Fnf9v5ZiTE5RfEqSHEdpP58iuXxK8803Q";
+    const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    
+    let currentUser = null;
+    let messageSubscription = null;
+    let isVoteMode = false;
+    let replyingTo = null;
+    let allDepartments = [];
+    let refreshInterval = null;
+
+    let presenceChannel = null;
+let onlineUsers = {};
+
+function initOnlineTracking() {
+    if (!currentUser) return;
+
+    presenceChannel = db.channel('online-users', {
+        config: {
+            presence: { key: currentUser.access_code }
+        }
+    });
+
+    presenceChannel
+        .on('presence', { event: 'sync' }, () => {
+            onlineUsers = presenceChannel.presenceState();
+
+            const count = Object.keys(onlineUsers).length;
+            document.getElementById('onlineCount').textContent = count;
+        })
+        .subscribe(async (status) => {
+            if (status === 'SUBSCRIBED') {
+                await presenceChannel.track({
+                    user: currentUser.full_name,
+                    online_at: new Date().toISOString()
+                });
+            }
+        });
+}
+    
+    function showToast(msg, isError) {
+        let toast = document.createElement('div');
+        toast.className = 'position-fixed bottom-0 start-50 translate-middle-x mb-4 p-2 rounded-4 text-white text-center';
+        toast.style.backgroundColor = isError ? '#dc3545' : '#007749';
+        toast.style.zIndex = 9999;
+        toast.style.padding = '6px 20px';
+        toast.style.borderRadius = '40px';
+        toast.style.fontSize = '0.8rem';
+        toast.innerText = msg;
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 2700);
+    }
+    
+    async function deleteOldMessages() {
+        if (!currentUser) return;
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+        const { error } = await db.from('messages').delete().lt('created_at', thirtyDaysAgo.toISOString());
+        if (error) console.warn("Delete old messages error:", error);
+    }
+
+    async function loadDepartments() {
+        if (!currentUser) return;
+        let { data } = await db.from('management_staff').select('department');
+        if (data) {
+            let unique = [...new Set(data.map(d => d.department))];
+            allDepartments = unique;
+            let select = document.getElementById('targetDeptSelect');
+            let opts = '<option value="">Select department...</option>';
+            for (let dept of unique) {
+                if (dept !== currentUser.department) opts += `<option value="${escapeHtml(dept)}">${escapeHtml(dept)}</option>`;
+            }
+            select.innerHTML = opts;
+        }
+    }
+    
+    async function login() {
+        let code = document.getElementById('accessCode').value.trim();
+        if (!code || code.length !== 4) { showToast("Enter 4-digit code", true); return; }
+        let { data, error } = await db.from('management_staff').select('*').eq('access_code', code).eq('is_active', true).single();
+        if (error || !data) { showToast("Invalid or inactive code", true); return; }
+        currentUser = data;
+        localStorage.setItem('mgmt_code', code);
+        document.getElementById('loginPanel').style.display = 'none';
+        document.getElementById('chatArea').style.display = 'block';
+        document.getElementById('inputBar').style.display = 'block';
+        document.getElementById('deptSelector').style.display = 'flex';
+        document.getElementById('userName').innerHTML = `${escapeHtml(currentUser.full_name)} (${escapeHtml(currentUser.department)})`;
+        await loadDepartments();
+        await deleteOldMessages();
+        await loadMessages();
+        subscribeToMessages();
+        startAutoRefresh();
+        initOnlineTracking();
+        initTypingIndicator();
+    }
+
+    window.reactToMessage = async function(messageId, emoji) {
+    const { data: msg } = await db
+        .from('messages')
+        .select('reactions, reacted_users')
+        .eq('id', messageId)
+        .single();
+
+    let reactions = msg.reactions || {};
+    let reactedUsers = msg.reacted_users || {};
+
+    if (reactedUsers[currentUser.access_code]) return;
+
+    reactions[emoji] = (reactions[emoji] || 0) + 1;
+    reactedUsers[currentUser.access_code] = emoji;
+
+    await db.from('messages')
+        .update({
+            reactions,
+            reacted_users: reactedUsers
+        })
+        .eq('id', messageId);
+
+    loadMessages();
+};
+
+let typingChannel = null;
+let typingTimeout = null;
+
+function initTypingIndicator() {
+    if (!currentUser) return;
+
+    typingChannel = db.channel('typing-room');
+
+    typingChannel
+        .on('broadcast', { event: 'typing' }, ({ payload }) => {
+            if (payload.user === currentUser.full_name) return;
+
+            const indicator = document.getElementById('typingIndicator');
+            indicator.textContent = `${payload.user} is typing...`;
+            indicator.style.display = 'block';
+
+            clearTimeout(typingTimeout);
+
+            typingTimeout = setTimeout(() => {
+                indicator.style.display = 'none';
+            }, 2000);
+        })
+        .subscribe();
+}
+    
+    function startAutoRefresh() {
+        if (refreshInterval) clearInterval(refreshInterval);
+        refreshInterval = setInterval(async () => {
+            await loadMessages();
+            await deleteOldMessages();
+        }, 10000);
+    }
+
+    async function saveProfileImage() {
+    if (!currentUser) return;
+
+    const imageUrl = document
+        .getElementById('profileImageInput')
+        .value
+        .trim();
+
+    if (!imageUrl) {
+        showToast("Paste image URL first", true);
+        return;
+    }
+
+    const { error } = await db
+        .from('management_staff')
+        .update({
+            profile_image: imageUrl
+        })
+        .eq('access_code', currentUser.access_code);
+
+    if (error) {
+        showToast("Failed to save image", true);
+        return;
+    }
+
+    currentUser.profile_image = imageUrl;
+    showToast("Profile updated");
+
+    loadMessages();
+}
+    
+    function getRecipientInfo() {
+        let type = document.getElementById('recipientSelect').value;
+        if (type === 'all') return { type: 'all', target: null };
+        if (type === 'my') return { type: 'my', target: currentUser.department };
+        if (type === 'specific') {
+            let targetDept = document.getElementById('targetDeptSelect').value;
+            if (!targetDept) { showToast("Pick a department", true); return null; }
+            return { type: 'specific', target: targetDept };
+        }
+        return { type: 'all', target: null };
+    }
+    
+    async function sendMessage(content, imageUrl, isVote, optA, optB) {
+        if (!currentUser) return;
+        if (!content && !imageUrl && !isVote) { showToast("Type something", true); return; }
+        let recipient = getRecipientInfo();
+        if (!recipient) return;
+        let msgData = {
+            content: content || (isVote ? "Poll:" : ""),
+            author_name: currentUser.full_name,
+            author_dept: currentUser.department,
+            reply_to: replyingTo ? replyingTo.id : null,
+            reply_content: replyingTo ? replyingTo.content : null,
+            reply_author: replyingTo ? replyingTo.author : null,
+            profile_image: currentUser.profile_image || null,
+            is_tiangmaatla: currentUser.is_tiangmaatla || false,
+            recipient_type: recipient.type,
+            target_department: recipient.target,
+            image_url: imageUrl || null,
+            is_vote: isVote || false,
+            vote_option_a: optA || null,
+            vote_option_b: optB || null,
+            vote_a_count: 0,
+            vote_b_count: 0,
+            users_voted: [],
+            created_at: new Date()
+        };
+        let { error } = await db.from('messages').insert([msgData]); 
+        if (error) { showToast("Error: " + error.message, true); return; }
+        document.getElementById('messageInput').value = '';
+        document.getElementById('imageUrlInput').value = '';
+        document.getElementById('imagePanel').style.display = 'none';
+        replyingTo = null;
+        document.getElementById('replyPreview').style.display = 'none';
+        await loadMessages();
+    }
+    
+    window.castVote = async function(messageId, side) {
+        if (!currentUser) return;
+        let { data: msg } = await db.from('messages').select('users_voted, vote_a_count, vote_b_count').eq('id', messageId).single();
+        if (!msg) return;
+        if (msg.users_voted && msg.users_voted.includes(currentUser.access_code)) { showToast("Already voted", true); return; }
+        let newA = msg.vote_a_count || 0, newB = msg.vote_b_count || 0;
+        if (side === 'A') newA++; else newB++;
+        let newVoters = (msg.users_voted || []).concat([currentUser.access_code]);
+        await db.from('messages').update({ vote_a_count: newA, vote_b_count: newB, users_voted: newVoters }).eq('id', messageId);
+        await loadMessages();
+    };
+    
+    async function loadMessages() {
+        if (!currentUser) return;
+        let { data } = await db.from('messages').select('*').order('created_at', { ascending: true });
+        let filtered = (data || []).filter(msg => 
+            msg.recipient_type === 'all' ||
+            (msg.recipient_type === 'my' && msg.target_department === currentUser.department) ||
+            (msg.recipient_type === 'specific' && msg.target_department === currentUser.department) ||
+            msg.author_name === currentUser.full_name
+        );
+
+        const searchValue = document
+    .getElementById('searchInput')
+    .value
+    .toLowerCase()
+    .trim();
+
+if (searchValue) {
+    filtered = filtered.filter(msg =>
+        (msg.content || '').toLowerCase().includes(searchValue) ||
+        (msg.author_name || '').toLowerCase().includes(searchValue) ||
+        (msg.author_dept || '').toLowerCase().includes(searchValue)
+    );
+}
+
+        for (let msg of filtered) {
+    if (!msg.seen_by) msg.seen_by = [];
+
+    if (
+        msg.author_name !== currentUser.full_name &&
+        !msg.seen_by.includes(currentUser.access_code)
+    ) {
+        await db
+            .from('messages')
+            .update({
+                seen_by: [...msg.seen_by, currentUser.access_code]
+            })
+            .eq('id', msg.id);
+    }
+}
+        renderMessages(filtered);
+    }
+    
+    function renderMessages(messages) {
+        let container = document.getElementById('messagesList');
+        if (!messages.length) { container.innerHTML = '<div class="text-center text-muted py-5"><i class="fas fa-comments fa-2x mb-2"></i><p>No messages yet</p></div>'; return; }
+        let html = '';
+        for (let msg of messages) {
+            let isMine = msg.author_name === currentUser.full_name;
+            let date = new Date(msg.created_at).toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
+            let deletedTime = msg.deleted_at
+            ? new Date(msg.deleted_at).toLocaleTimeString([], {
+                hour: '2-digit',
+                minute: '2-digit'
+            })
+            : '';
+            let initial = msg.author_name.charAt(0).toUpperCase();
+            let recipientIcon = msg.recipient_type === 'all' ? 'All dept' : (msg.recipient_type === 'my' ? 'My Dept' : `Specific dept ${msg.target_department}`);
+            let tiangBadge = msg.is_tiangmaatla ? '<span class="dept-tag tiangmaatla-tag"> Tiang</span>' : '';
+            let contentHtml = '';
+
+            if ((msg.content || '').startsWith('data:audio')) {
+                contentHtml = `
+                    <audio controls style="width:100%;">
+                        <source src="${msg.content}" type="audio/webm">
+                    </audio>
+                `;
+            } else {
+                contentHtml = `<div class="message-text">${formatMessageContent(msg.content)}</div>`;
+            }
+            function formatMessageContent(text) {
+                if (!text) return '';
+
+                let safe = escapeHtml(text);
+
+                safe = safe.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+
+                safe = safe.replace(/_(.*?)_/g, '<em>$1</em>');
+
+                safe = safe.replace(/~(.*?)~/g, '<del>$1</del>');
+
+                const urlRegex = /(https?:\/\/[^\s]+)/g;
+                safe = safe.replace(urlRegex, (url) => {
+                    return `<a href="${url}" target="_blank" style="color:#0d6efd;text-decoration:underline;">Open link</a>`;
+                });
+
+                return safe;
+            }
+
+            let replyHtml = '';
+
+            if (msg.reply_to) {
+                replyHtml = `
+                    <div style="background:#f8f9fa;padding:6px;border-radius:6px;font-size:12px;margin-bottom:6px;">
+                        <strong>${escapeHtml(msg.reply_author)}</strong><br>
+                        ${formatMessageContent(msg.reply_content)}
+                    </div>
+                `;
+            }
+            if (msg.is_vote && msg.vote_option_a && msg.vote_option_b) {
+                contentHtml = `<div class="vote-box">
+                    <div class="vote-option" onclick="castVote('${msg.id}', 'A')"><span><strong>A:</strong> ${escapeHtml(msg.vote_option_a)}</span><span class="vote-count">👍 ${msg.vote_a_count || 0}</span></div>
+                    <div class="vote-option" onclick="castVote('${msg.id}', 'B')"><span><strong>B:</strong> ${escapeHtml(msg.vote_option_b)}</span><span class="vote-count">👍 ${msg.vote_b_count || 0}</span></div>
+                    ${(msg.users_voted || []).includes(currentUser.access_code) ? '<small class="text-muted">✓ Voted</small>' : '<small class="text-muted">Tap to vote</small>'}</div>`;
+            }
+            let imageHtml = msg.image_url ? `<img src="${escapeHtml(msg.image_url)}" class="message-img" onclick="openImage('${escapeHtml(msg.image_url)}')">` : '';
+            html += `<div class="message ${isMine ? 'outgoing' : 'incoming'}"><div class="d-flex gap-2" style="max-width:88%;">${!isMine ? `<div class="avatar"> ${ msg.profile_image ? `<img src="${escapeHtml(msg.profile_image)}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">` : initial } </div>` : ''}<div class="bubble"><div class="author">${escapeHtml(msg.author_name)} <span class="dept-tag">${escapeHtml(msg.author_dept)}</span> ${tiangBadge} <span class="text-muted small">${recipientIcon}</span></div>${replyHtml}
+${contentHtml}${imageHtml}${renderReactionSection(msg)}<div class="d-flex justify-content-between align-items-center mt-1">
+   <div class="time">
+   ${date}
+${isMine ? `<small style="color:#007749;">
+Seen by ${msg.seen_by ? msg.seen_by.length : 0}
+</small>` : ''}
+   ${msg.is_deleted ? `<small style="color:red;">Deleted ${deletedTime}</small>` : ''}
+   ${msg.is_edited ? `<small style="color:orange;">Edited</small>` : ''}
+</div>
+   <div style="display:flex;gap:8px;align-items:center;">
+
+   ${
+      isMine
+      ? `
+      <button onclick="editMessage('${msg.id}', '${escapeHtml(msg.content)}')"
+          style="border:none;background:none;color:orange;font-size:12px;">
+          Edit
+      </button>
+
+      <button onclick="deleteMessage('${msg.id}')"
+          style="border:none;background:none;color:red;font-size:12px;">
+          Delete
+      </button>
+      `
+      : ''
+   }
+
+   <button onclick="replyToMessage(
+      '${msg.id}',
+      '${escapeHtml(msg.content)}',
+      '${escapeHtml(msg.author_name)}'
+   )"
+   style="border:none;background:none;color:#007749;font-size:12px;">
+      Reply
+   </button>
+
+</div>
+
+</div></div>${isMine ? `<div class="avatar"> ${ msg.profile_image ? `<img src="${escapeHtml(msg.profile_image)}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">` : initial } </div>` : ''}</div></div>`;
+        }
+        container.innerHTML = html;
+        document.getElementById('chatMain').scrollTop = document.getElementById('chatMain').scrollHeight;
+    }
+
+    function renderReactionSection(msg) {
+    const emojis = ["👍", "❤️", "😂", "😮"];
+
+    return `
+        <div class="reaction-container" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;">
+            ${emojis.map(emoji => {
+                const count = msg.reactions?.[emoji] || 0;
+
+                return `
+                    <button class="reaction-btn"
+                        onclick="reactToMessage('${msg.id}','${emoji}')">
+                        ${emoji} ${count > 0 ? count : ''}
+                    </button>
+                `;
+            }).join('')}
+        </div>
+    `;
+}
+
+window.deleteMessage = async function(messageId) {
+    if (!confirm("Delete this message?")) return;
+
+    const { error } = await db
+        .from('messages')
+        .update({
+            content: "🚫 This message was deleted",
+            image_url: null,
+            is_deleted: true,
+            deleted_at: new Date().toISOString()
+        })
+        .eq('id', messageId);
+
+    if (error) {
+        showToast("Failed to delete", true);
+        return;
+    }
+
+    showToast("Message deleted");
+    loadMessages();
+};
+
+window.editMessage = async function(messageId, oldText) {
+    const newText = prompt("Edit message:", oldText);
+
+    if (!newText) return;
+    if (newText.trim() === oldText.trim()) return;
+
+    const { error } = await db
+        .from('messages')
+        .update({
+            content: newText.trim(),
+            is_edited: true,
+            edited_at: new Date().toISOString()
+        })
+        .eq('id', messageId);
+
+    if (error) {
+        showToast("Edit failed", true);
+        return;
+    }
+
+    showToast("Message updated");
+    loadMessages();
+};
+    
+    function subscribeToMessages() {
+        if (messageSubscription) messageSubscription.unsubscribe();
+        messageSubscription = db.channel('mgmt-chat').on('postgres_changes', { event: '*', schema: 'public', table: 'messages' }, () => { loadMessages(); deleteOldMessages(); }).subscribe();
+    }
+    
+    function escapeHtml(str) { if (!str) return ''; return str.replace(/[&<>]/g, m => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;' }[m])); }
+    window.openImage = (src) => { document.getElementById('modalImage').src = src; document.getElementById('imageModal').style.display = 'flex'; };
+    document.getElementById('imageModal').onclick = () => document.getElementById('imageModal').style.display = 'none';
+    
+    function setupEmojiPicker() {
+    const emojis = ["😀","😃","😄","😁","😆","😅","😂","🤣","🤓","😞","😫","💯","💬","💤","👋","👇","👆","❤️","👍","👎","👏","🙏","🔥","⭐","✅","🎉","🙂","☕","😊","😇","🥰","😍","🤩","😜","🤫","😷","🥵","🥳"];
+
+    let grid = document.getElementById('emojiGrid');
+    grid.innerHTML = '';
+
+    emojis.forEach(emoji => {
+        let span = document.createElement('div');
+
+        span.textContent = emoji;
+
+        span.style.width = '3px';
+        span.style.height = '38px';
+        span.style.display = 'flex';
+        span.style.alignItems = 'center';
+        span.style.justifyContent = 'center';
+
+        span.style.fontSize = '1.4rem';
+        span.style.cursor = 'pointer';
+        span.style.userSelect = 'none';
+
+        span.onclick = () => {
+            document.getElementById('messageInput').value += emoji;
+            document.getElementById('emojiPicker').style.display = 'none';
+            document.getElementById('messageInput').focus();
+        };
+
+        grid.appendChild(span);
+    });
+}
+    
+    document.getElementById('expandBtn').addEventListener('click', () => {
+        const drawer = document.getElementById('actionDrawer');
+        drawer.classList.toggle('open');
+        if (!drawer.classList.contains('open')) {
+            document.getElementById('emojiPicker').style.display = 'none';
+            document.getElementById('imagePanel').style.display = 'none';
+        }
+    });
+    document.getElementById('recipientSelect').addEventListener('change', function() {
+        document.getElementById('specificDeptSelector').classList.toggle('active', this.value === 'specific');
+        if (this.value === 'specific') loadDepartments();
+    });
+    document.getElementById('loginBtn').addEventListener('click', login);
+    document.getElementById('sendBtn').addEventListener('click', () => { if (isVoteMode) document.getElementById('votePopup').style.display = 'block'; else sendMessage(document.getElementById('messageInput').value.trim(), null, false); });
+    document.getElementById('messageInput').addEventListener('keypress', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); if (isVoteMode) document.getElementById('votePopup').style.display = 'block'; else sendMessage(e.target.value.trim(), null, false); } });
+    document.getElementById('emojiBtn').onclick = (e) => { e.stopPropagation(); const picker = document.getElementById('emojiPicker'); picker.style.display = picker.style.display === 'block' ? 'none' : 'block'; document.getElementById('imagePanel').style.display = 'none'; };
+    document.addEventListener('click', (e) => { if (!document.getElementById('emojiPicker').contains(e.target) && e.target !== document.getElementById('emojiBtn')) document.getElementById('emojiPicker').style.display = 'none'; });
+    document.getElementById('imageBtn').onclick = (e) => { e.stopPropagation(); const imgPanel = document.getElementById('imagePanel'); imgPanel.style.display = imgPanel.style.display === 'flex' ? 'none' : 'flex'; document.getElementById('emojiPicker').style.display = 'none'; };
+    document.getElementById('closeImageBtn').onclick = () => document.getElementById('imagePanel').style.display = 'none';
+document.getElementById('confirmDocBtn').onclick = async () => {
+    const url = document.getElementById('docUrlInput').value.trim();
+
+    if (!url) {
+        showToast("Paste document URL first", true);
+        return;
+    }
+
+    await sendMessage(url, null, false, null, null);
+
+    document.getElementById('docUrlInput').value = '';
+    document.getElementById('docPanel').style.display = 'none';
+
+    showToast("Document sent");
+};    
+    document.getElementById('voteToggleBtn').onclick = () => { isVoteMode = !isVoteMode; document.getElementById('voteIndicator').classList.toggle('active', isVoteMode); if (!isVoteMode) document.getElementById('votePopup').style.display = 'none'; };
+    document.getElementById('submitVoteBtn').onclick = () => { let a = document.getElementById('voteOptionA').value.trim(), b = document.getElementById('voteOptionB').value.trim(); if (!a || !b) { showToast("Both options needed", true); return; } sendMessage("", null, true, a, b); document.getElementById('votePopup').style.display = 'none'; document.getElementById('voteOptionA').value = ''; document.getElementById('voteOptionB').value = ''; isVoteMode = false; document.getElementById('voteIndicator').classList.remove('active'); };
+    document.getElementById('cancelVoteBtn').onclick = () => { document.getElementById('votePopup').style.display = 'none'; isVoteMode = false; document.getElementById('voteIndicator').classList.remove('active'); };
+    document.getElementById('messageInput').addEventListener('input', function() {
+    this.style.height = 'auto';
+    this.style.height = Math.min(this.scrollHeight, 80) + 'px';
+
+    if (typingChannel) {
+        typingChannel.send({
+            type: 'broadcast',
+            event: 'typing',
+            payload: {
+                user: currentUser.full_name
+            }
+        });
+    }
+});
+
+window.replyToMessage = function(messageId, content, author) {
+    replyingTo = {
+        id: messageId,
+        content: content,
+        author: author
+    };
+
+    document.getElementById('replyPreview').style.display = 'block';
+    document.getElementById('replyText').innerHTML =
+        `<strong>Replying to ${author}</strong><br>${content}`;
+};
+
+window.cancelReply = function() {
+    replyingTo = null;
+    document.getElementById('replyPreview').style.display = 'none';
+};
+
+document.getElementById('searchInput').addEventListener('input', function() {
+    loadMessages();
+});
+    
+    setupEmojiPicker();
+    let savedCode = localStorage.getItem('mgmt_code');
+    if (savedCode) { document.getElementById('accessCode').value = savedCode; login(); }
+
+    document.getElementById('profileBtn').addEventListener('click', () => {
+    document.getElementById('profileModal').classList.add('active');
+});
+
+document.getElementById('closeProfileModal').addEventListener('click', () => {
+    document.getElementById('profileModal').classList.remove('active');
+});
+
+document.getElementById('docBtn').onclick = () => {
+    const panel = document.getElementById('docPanel');
+    panel.style.display =
+        panel.style.display === 'block' ? 'none' : 'block';
+};
+
+document.getElementById('docBtn').onclick = (e) => {
+    e.stopPropagation();
+
+    const panel = document.getElementById('docPanel');
+
+    panel.style.display =
+        panel.style.display === 'block' ? 'none' : 'block';
+
+    document.getElementById('emojiPicker').style.display = 'none';
+    document.getElementById('imagePanel').style.display = 'none';
+};
+
+let mediaRecorder;
+let audioChunks = [];
+let recordedAudioBlob = null;
+
+document.getElementById('voiceBtn').onclick = () => {
+    const panel = document.getElementById('voicePanel');
+    panel.style.display =
+        panel.style.display === 'block' ? 'none' : 'block';
+};
+
+document.getElementById('startRecordBtn').onclick = async () => {
+    const stream = await navigator.mediaDevices.getUserMedia({
+        audio: true
+    });
+
+    mediaRecorder = new MediaRecorder(stream);
+    audioChunks = [];
+
+    mediaRecorder.ondataavailable = e => {
+        audioChunks.push(e.data);
+    };
+
+    mediaRecorder.onstop = () => {
+        recordedAudioBlob = new Blob(audioChunks, {
+            type: 'audio/webm'
+        });
+
+        const audioUrl = URL.createObjectURL(recordedAudioBlob);
+
+        document.getElementById('audioPreview').src = audioUrl;
+        document.getElementById('audioPreview').style.display = 'block';
+        document.getElementById('sendVoiceBtn').style.display = 'block';
+    };
+
+    mediaRecorder.start();
+    showToast("Recording started");
+};
+
+document.getElementById('stopRecordBtn').onclick = () => {
+    if (mediaRecorder) {
+        mediaRecorder.stop();
+        showToast("Recording stopped");
+    }
+};
+
+document.getElementById('sendVoiceBtn').onclick = async () => {
+    if (!recordedAudioBlob) return;
+
+    const reader = new FileReader();
+
+    reader.onloadend = function () {
+        const base64Audio = reader.result;
+
+        sendMessage(base64Audio, null, false);
+
+        document.getElementById('voicePanel').style.display = 'none';
+        document.getElementById('audioPreview').style.display = 'none';
+        document.getElementById('sendVoiceBtn').style.display = 'none';
+    };
+
+    reader.readAsDataURL(recordedAudioBlob);
+};
+
+function goFullScreen() {
+    const elem = document.documentElement;
+
+    if (elem.requestFullscreen) {
+        elem.requestFullscreen();
+    } else if (elem.webkitRequestFullscreen) {
+        elem.webkitRequestFullscreen(); 
+    } else if (elem.msRequestFullscreen) {
+        elem.msRequestFullscreen();
+    }
+}
+</script>
+</body>
+</html>
