@@ -955,6 +955,7 @@ function initOnlineTracking() {
         startAutoRefresh();
         initOnlineTracking();
         initTypingIndicator();
+        enableNotifications();
     }
 
     window.reactToMessage = async function(messageId, emoji) {
@@ -1144,6 +1145,14 @@ if (searchValue) {
             .eq('id', msg.id);
     }
 }
+
+// Check if there are new messages for notification
+if (lastMessageCount > 0 && filtered.length > lastMessageCount) {
+    let newestMsg = filtered[filtered.length - 1];
+    showNotificationIfNeeded(newestMsg);
+}
+lastMessageCount = filtered.length;
+
         renderMessages(filtered);
     }
     
@@ -1153,7 +1162,21 @@ if (searchValue) {
         let html = '';
         for (let msg of messages) {
             let isMine = msg.author_name === currentUser.full_name;
-            let date = new Date(msg.created_at).toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
+            let messageDate = new Date(msg.created_at);
+        let today = new Date();
+        let yesterday = new Date(today);
+        yesterday.setDate(yesterday.getDate() - 1);
+
+        let dateString = '';
+        if (messageDate.toDateString() === today.toDateString()) {
+            dateString = 'Today';
+        } else if (messageDate.toDateString() === yesterday.toDateString()) {
+            dateString = 'Yesterday';
+        } else {
+            dateString = messageDate.toLocaleDateString([], { month: 'short', day: 'numeric' });
+        }
+        let timeString = messageDate.toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
+        let date = `${dateString} at ${timeString}`;
             let deletedTime = msg.deleted_at
             ? new Date(msg.deleted_at).toLocaleTimeString([], {
                 hour: '2-digit',
@@ -1224,17 +1247,28 @@ Seen by ${msg.seen_by ? msg.seen_by.length : 0}
 
    ${
       isMine
-      ? `
-      <button onclick="editMessage('${msg.id}', '${escapeHtml(msg.content)}')"
-          style="border:none;background:none;color:orange;font-size:12px;">
-          Edit
-      </button>
-
-      <button onclick="deleteMessage('${msg.id}')"
-          style="border:none;background:none;color:red;font-size:12px;">
-          Delete
-      </button>
-      `
+      ? (() => {
+            let messageAge = (new Date() - new Date(msg.created_at)) / 1000 / 60;
+            if (messageAge <= 6) {
+                return `
+                    <button onclick="editMessage('${msg.id}', '${escapeHtml(msg.content)}')"
+                        style="border:none;background:none;color:orange;font-size:12px;">
+                        Edit
+                    </button>
+                    <button onclick="deleteMessage('${msg.id}')"
+                        style="border:none;background:none;color:red;font-size:12px;">
+                        Delete
+                    </button>
+                `;
+            } else {
+                return `
+                    <button disabled
+                        style="border:none;background:none;color:gray;font-size:12px;opacity:0.5;cursor:not-allowed;">
+                        Delete (expired)
+                    </button>
+                `;
+            }
+        })()
       : ''
    }
 
@@ -1275,6 +1309,16 @@ Seen by ${msg.seen_by ? msg.seen_by.length : 0}
 }
 
 window.deleteMessage = async function(messageId) {
+    // Get message first to check age
+    let { data: msg } = await db.from('messages').select('created_at').eq('id', messageId).single();
+    if (!msg) return;
+    
+    let messageAge = (new Date() - new Date(msg.created_at)) / 1000 / 60;
+    if (messageAge > 6) {
+        showToast("Cannot delete messages older than 6 minutes", true);
+        return;
+    }
+    
     if (!confirm("Delete this message?")) return;
 
     const { error } = await db
@@ -1525,6 +1569,34 @@ document.getElementById('sendVoiceBtn').onclick = async () => {
 
     reader.readAsDataURL(recordedAudioBlob);
 };
+
+// ========== NOTIFICATION FUNCTIONS ==========
+let lastMessageCount = 0;
+
+async function enableNotifications() {
+    if ('Notification' in window) {
+        const permission = await Notification.requestPermission();
+        if (permission === 'granted') {
+            console.log('Notifications enabled');
+        }
+    }
+}
+
+function showNotificationIfNeeded(msg) {
+    if (!currentUser) return;
+    if (msg.author_name === currentUser.full_name) return;
+    if (document.hasFocus()) return;
+    
+    if (Notification.permission === 'granted') {
+        let shortMsg = msg.content ? msg.content.substring(0, 100) : 'New message';
+        new Notification('📨 New message from ' + msg.author_name, {
+            body: shortMsg,
+            icon: 'https://cdn-icons-png.flaticon.com/512/4712/4712109.png',
+            tag: 'chat-message',
+            vibrate: [200, 100, 200]
+        });
+    }
+}
 
 function goFullScreen() {
     const elem = document.documentElement;
