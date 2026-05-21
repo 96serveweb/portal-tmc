@@ -1146,7 +1146,6 @@ if (searchValue) {
     }
 }
 
-// Check if there are new messages for notification
 if (lastMessageCount > 0 && filtered.length > lastMessageCount) {
     let newestMsg = filtered[filtered.length - 1];
     showNotificationIfNeeded(newestMsg);
@@ -1233,7 +1232,7 @@ lastMessageCount = filtered.length;
                     ${(msg.users_voted || []).includes(currentUser.access_code) ? '<small class="text-muted">✓ Voted</small>' : '<small class="text-muted">Tap to vote</small>'}</div>`;
             }
             let imageHtml = msg.image_url ? `<img src="${escapeHtml(msg.image_url)}" class="message-img" onclick="openImage('${escapeHtml(msg.image_url)}')">` : '';
-            html += `<div class="message ${isMine ? 'outgoing' : 'incoming'}"><div class="d-flex gap-2" style="max-width:88%;">${!isMine ? `<div class="avatar"> ${ msg.profile_image ? `<img src="${escapeHtml(msg.profile_image)}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">` : initial } </div>` : ''}<div class="bubble"><div class="author">${escapeHtml(msg.author_name)} <span class="dept-tag">${escapeHtml(msg.author_dept)}</span> ${tiangBadge} <span class="text-muted small">${recipientIcon}</span></div>${replyHtml}
+            html += `<div class="message ${isMine ? 'outgoing' : 'incoming'}"><div class="d-flex gap-2" style="max-width:88%;">${!isMine ? `<div class="avatar"> ${ msg.profile_image ? `<img src="${escapeHtml(msg.profile_image)}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">` : initial } </div>` : ''}<div class="bubble" onclick="toggleReactions('${msg.id}')" style="cursor:pointer;"><div class="author">${escapeHtml(msg.author_name)} <span class="dept-tag">${escapeHtml(msg.author_dept)}</span> ${tiangBadge} <span class="text-muted small">${recipientIcon}</span></div>${replyHtml}
 ${contentHtml}${imageHtml}${renderReactionSection(msg)}<div class="d-flex justify-content-between align-items-center mt-1">
    <div class="time">
    ${date}
@@ -1291,9 +1290,9 @@ Seen by ${msg.seen_by ? msg.seen_by.length : 0}
 
     function renderReactionSection(msg) {
     const emojis = ["👍", "❤️", "😂", "😮"];
-
+    
     return `
-        <div class="reaction-container" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;">
+        <div class="reaction-container" id="reactions-${msg.id}" style="display:none;gap:6px;flex-wrap:wrap;margin-top:6px;">
             ${emojis.map(emoji => {
                 const count = msg.reactions?.[emoji] || 0;
 
@@ -1309,7 +1308,6 @@ Seen by ${msg.seen_by ? msg.seen_by.length : 0}
 }
 
 window.deleteMessage = async function(messageId) {
-    // Get message first to check age
     let { data: msg } = await db.from('messages').select('created_at').eq('id', messageId).single();
     if (!msg) return;
     
@@ -1570,7 +1568,6 @@ document.getElementById('sendVoiceBtn').onclick = async () => {
     reader.readAsDataURL(recordedAudioBlob);
 };
 
-// ========== NOTIFICATION FUNCTIONS ==========
 let lastMessageCount = 0;
 
 async function enableNotifications() {
@@ -1595,6 +1592,17 @@ function showNotificationIfNeeded(msg) {
             tag: 'chat-message',
             vibrate: [200, 100, 200]
         });
+    }
+}
+
+function toggleReactions(messageId) {
+    const reactionsDiv = document.getElementById(`reactions-${messageId}`);
+    if (reactionsDiv) {
+        if (reactionsDiv.style.display === 'none') {
+            reactionsDiv.style.display = 'flex';
+        } else {
+            reactionsDiv.style.display = 'none';
+        }
     }
 }
 
