@@ -1195,10 +1195,8 @@ function getZackMessage() {
     const hour = now.getHours();
     const day = now.getDay();
 
-    // weekend off
     if (day === 0 || day === 6) return null;
 
-    // Friday special
     if (day === 5) {
         return zackMessages.friday[
             Math.floor(Math.random() * zackMessages.friday.length)
@@ -1234,10 +1232,8 @@ async function sendZackMessage() {
 
 function startZackBot() {
 
-    // first message immediately
     sendZackMessage();
 
-    // repeat every 3 hours
     setInterval(() => {
         sendZackMessage();
     }, 3 * 60 * 60 * 1000);
@@ -1389,7 +1385,6 @@ function renderOnlineUsers() {
 
     expiryDate.setHours(expiryDate.getHours() - 120);
 
-    // Get old messages first
     const { data: oldMessages, error: fetchError } = await db
         .from('messages')
         .select('*')
@@ -1404,10 +1399,8 @@ function renderOnlineUsers() {
         return;
     }
 
-    // Delete uploaded files from storage
     for (const msg of oldMessages) {
 
-        // Delete attached file/image
         if (msg.content && msg.content.includes('supabase')) {
 
             try {
@@ -1426,7 +1419,6 @@ function renderOnlineUsers() {
             }
         }
 
-        // Delete image_url uploads
         if (msg.image_url) {
 
             try {
@@ -1446,7 +1438,6 @@ function renderOnlineUsers() {
         }
     }
 
-    // Finally delete old database rows
     const { error: deleteError } = await db
         .from('messages')
         .delete()
@@ -1611,7 +1602,6 @@ function initTypingIndicator() {
 
     currentUser.profile_image = imageUrl;
 
-// Update all previous messages
 await db
     .from('messages')
     .update({
@@ -1619,7 +1609,6 @@ await db
     })
     .eq('author_name', currentUser.full_name);
 
-// Update realtime online users
 if (presenceChannel) {
 
     await presenceChannel.untrack();
@@ -1664,12 +1653,10 @@ async function removeProfileImage() {
                 .pop()
                 .split('?')[0];
 
-        // Remove from storage
         await db.storage
             .from('profile-images')
             .remove([fileName]);
 
-        // Remove from database
         await db
             .from('management_staff')
             .update({
@@ -1679,7 +1666,6 @@ async function removeProfileImage() {
 
         currentUser.profile_image = null;
 
-// Remove image from old messages
 await db
     .from('messages')
     .update({
@@ -1687,7 +1673,6 @@ await db
     })
     .eq('author_name', currentUser.full_name);
 
-// Update realtime presence
 if (presenceChannel) {
 
     await presenceChannel.untrack();
@@ -2367,7 +2352,6 @@ document.getElementById('sendVoiceBtn').onclick = async () => {
             currentUser.access_code +
             ".webm";
 
-        // Upload voice note to Supabase Storage
         const { error: uploadError } = await db.storage
             .from('chat-files')
             .upload(fileName, recordedAudioBlob, {
@@ -2383,17 +2367,14 @@ document.getElementById('sendVoiceBtn').onclick = async () => {
             return;
         }
 
-        // Get public URL
         const { data } = db.storage
             .from('chat-files')
             .getPublicUrl(fileName);
 
         const audioUrl = data.publicUrl;
 
-        // Send URL as normal message
         await sendMessage(audioUrl, null, false);
 
-        // Reset UI
         document.getElementById('voicePanel').style.display = 'none';
 
         document.getElementById('audioPreview').style.display = 'none';
@@ -2541,8 +2522,8 @@ document.getElementById('realFileInput').addEventListener('change', async functi
     showToast("Uploading file...");
 
     const cleanName = file.name
-    .replace(/[^a-zA-Z0-9.\-_]/g, '_')  // safe only
-    .replace(/_+/g, '_');              // remove double underscores 
+    .replace(/[^a-zA-Z0-9.\-_]/g, '_')  
+    .replace(/_+/g, '_');              
 
     const fileName = Date.now() + "_" + cleanName;
 
