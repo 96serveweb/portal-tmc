@@ -1,0 +1,3039 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
+    <link rel="icon" type="image/png" href="favicon.png">
+    <meta name="theme-color" content="#00194A">
+    <title>Tiangmaatla chats</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        :root {
+            --sa-green: #007749;
+            --sa-blue: #00194A;
+            --sa-yellow: #FFB612;
+            --sa-red: #E03C31;
+            --chat-bg: #f0f2f5;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, sans-serif;
+            background: var(--chat-bg);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            position: fixed;
+            width: 100%;
+        }
+
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png');
+            background-repeat: repeat;
+            opacity: 0.20;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .header-bar {
+            height: 4px;
+            background: linear-gradient(90deg, var(--sa-green) 25%, var(--sa-yellow) 25%, var(--sa-yellow) 50%, var(--sa-red) 50%, var(--sa-red) 75%, var(--sa-blue) 75%);
+        }
+
+        .navbar {
+            background: var(--sa-blue);
+            padding: 10px 12px;
+            position: fixed;
+            top: 4px;
+            left: 0;
+            right: 0;
+            z-index: 1030;
+        }
+
+        .navbar-brand {
+            color: white !important;
+            font-weight: 600;
+            font-size: 1rem;
+        }
+
+        .navbar-brand i {
+            color: var(--sa-yellow);
+        }
+
+        .user-badge {
+            background: rgba(255,255,255,0.12);
+            border-radius: 40px;
+            padding: 5px 12px;
+            color: white;
+            font-size: 0.7rem;
+            font-weight: 500;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 48vw;
+        }
+
+        .online-stats {
+            background: rgba(0,0,0,0.7);
+            backdrop-filter: blur(6px);
+            border-radius: 40px;
+            padding: 4px 14px;
+            font-size: 0.7rem;
+            font-weight: 500;
+            color: white;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-left: 8px;
+            white-space: nowrap;
+        }
+        .online-stats i {
+            color: #2ecc71;
+            font-size: 0.7rem;
+            animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse {
+            0% { opacity: 0.4; transform: scale(0.8);}
+            100% { opacity: 1; transform: scale(1);}
+        }
+
+        .chat-main {
+            flex: 1;
+            overflow-y: auto;
+            padding: 95px 10px 80px 10px;
+            position: relative;
+        }
+
+        .chat-main::before {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png');
+            background-repeat: repeat;
+            opacity: 0.2;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .chat-container {
+            position: relative;
+            z-index: 1;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .dept-selector {
+            position: fixed;
+            top: 70px;  
+            right: 12px;
+            z-index: 1040;  
+            background: white;
+            backdrop-filter: blur(8px);
+            border-radius: 60px;
+            padding: 6px 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+        .dept-selector i { color: var(--sa-green); font-size: 0.8rem; }
+        .dept-selector select {
+            border: none;
+            background: white;
+            font-weight: 600;
+            color: var(--sa-blue);
+            outline: none;
+            font-size: 0.75rem;
+            padding: 6px 8px;
+            cursor: pointer;
+            font-family: inherit;
+            border-radius: 40px;
+            appearance: none;
+            -webkit-appearance: none;
+            background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23007749' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'></polyline></svg>");
+            background-repeat: no-repeat;
+            background-position: right 8px center;
+            padding-right: 28px;
+        }
+
+        .specific-dept-selector {
+            position: fixed;
+            top: 118px; 
+            right: 12px;
+            z-index: 1040;
+            background: white;
+            backdrop-filter: blur(8px);
+            border-radius: 60px;
+            padding: 6px 16px;
+            display: none;
+            align-items: center;
+            gap: 10px;
+        }
+        .specific-dept-selector.active { display: flex; }
+        .specific-dept-selector i { color: var(--sa-green); }
+        .specific-dept-selector select {
+            border: none;
+            background: white;
+            font-weight: 500;
+            color: var(--sa-blue);
+            outline: none;
+            font-size: 0.75rem;
+            padding: 6px 8px;
+            cursor: pointer;
+            font-family: inherit;
+            border-radius: 40px;
+            appearance: none;
+            -webkit-appearance: none;
+            background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23007749' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'></polyline></svg>");
+            background-repeat: no-repeat;
+            background-position: right 8px center;
+            padding-right: 28px;
+        }
+
+        .vote-mode-indicator {
+            position: fixed;
+            bottom: 85px;
+            right: 12px;
+            background: var(--sa-green);
+            color: white;
+            padding: 5px 12px;
+            border-radius: 40px;
+            font-size: 0.65rem;
+            display: none;
+            z-index: 1026;
+            font-weight: 500;
+            pointer-events: none;
+        }
+        .vote-mode-indicator.active { display: block; }
+
+        .message {
+            display: flex;
+            margin-bottom: 14px;
+            animation: fadeIn 0.2s ease;
+        }
+
+        .message.outgoing { justify-content: flex-end; }
+        .message.incoming { justify-content: flex-start; }
+
+        .bubble {
+            margin-top: 20px;
+            max-width: 82%;
+            background: white;
+            border-radius: 22px;
+            padding: 8px 14px;
+        }
+
+        .outgoing .bubble { background: #dcf8c5; border-bottom-right-radius: 6px; }
+        .incoming .bubble { background: white; border-bottom-left-radius: 6px; }
+
+        .author {
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: var(--sa-green);
+            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            flex-wrap: wrap;
+        }
+
+        .dept-tag {
+            font-size: 0.6rem;
+            background: #e9ecef;
+            padding: 2px 8px;
+            border-radius: 30px;
+            font-weight: 400;
+        }
+
+        .tiangmaatla-tag {
+            background: var(--sa-yellow);
+            color: #000;
+        }
+
+        .message-text {
+            padding: 8px 0 10px 0;
+            font-size: 0.9rem;
+            line-height: 1.4;
+            word-wrap: break-word;
+            white-space: pre-wrap;
+        }
+
+        .message-img {
+            max-width: 100%;
+            border-radius: 16px;
+            margin-top: 6px;
+            cursor: pointer;
+            max-height: 180px;
+        }
+
+        .time {
+            font-size: 0.6rem;
+            color: #6c757d;
+            text-align: right;
+            margin-top: 4px;
+        }
+
+        .avatar {
+            margin-top: 20px;
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--sa-green));
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            flex-shrink: 0;
+            font-size: 0.9rem;
+        }
+
+        .vote-box {
+            background: #eef3fc;
+            border-radius: 20px;
+            padding: 10px;
+            margin-top: 8px;
+        }
+
+        .vote-option {
+            background: white;
+            border-radius: 40px;
+            padding: 8px 14px;
+            margin: 6px 0;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid #dee2e6;
+            font-size: 0.85rem;
+        }
+
+        .vote-count { font-weight: 700; color: var(--sa-green); }
+
+        .input-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(255,255,255,0.96);
+            backdrop-filter: blur(4px);
+            padding: 10px 12px;
+            border-top: 0.5px solid rgba(0,0,0,0.06);
+            z-index: 1020;
+        }
+
+        .input-primary {
+            display: flex;
+            align-items: flex-end;
+            gap: 8px;
+            width: 100%;
+        }
+
+        .input-field {
+            flex: 1;
+            border: 1px solid #e2e8f0;
+            border-radius: 28px;
+            padding: 10px 16px;
+            font-family: inherit;
+            font-size: 0.95rem;
+            resize: none;
+            max-height: 100px;
+            background: #ffffff;
+        }
+
+        .input-field:focus {
+            outline: none;
+            border-color: var(--sa-green);
+        }
+
+        .send-btn {
+            background: var(--sa-green);
+            color: white;
+            border-radius: 50%;
+            width: 46px;
+            height: 46px;
+            border: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            flex-shrink: 0;
+            transition: 0.1s;
+        }
+        .send-btn:active { transform: scale(0.94); }
+
+        .expand-toggle {
+            background: #f0f2f5;
+            border: none;
+            border-radius: 40px;
+            width: 46px;
+            height: 46px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.3rem;
+            color: var(--sa-green);
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+
+        .action-drawer {
+            max-height: 0;
+            opacity: 0;
+            overflow: hidden;
+            transition: max-height 0.28s cubic-bezier(0.2, 0.9, 0.4, 1.1), opacity 0.2s;
+            margin-top: 0px;
+            visibility: hidden;
+        }
+        .action-drawer.open {
+            max-height: 160px;
+            opacity: 1;
+            margin-top: 12px;
+            visibility: visible;
+        }
+
+        .icon-strip {
+            display: flex;
+            align-items: center;
+            justify-content: space-around;
+            gap: 16px;
+            background: #ffffffdd;
+            backdrop-filter: blur(8px);
+            padding: 8px 16px;
+            border-radius: 60px;
+        }
+
+        .action-icon {
+            background: transparent;
+            border: none;
+            font-size: 1.4rem;
+            color: #2c3e50;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 50%;
+            transition: 0.1s;
+        }
+        .action-icon:active { background: rgba(0,0,0,0.05); transform: scale(0.95); }
+
+        .image-panel {
+            margin-top: 12px;
+            display: flex;
+            gap: 8px;
+            background: white;
+            padding: 10px 14px;
+            border-radius: 48px;
+            align-items: center;
+            width: 100%;
+        }
+        .image-panel input { flex: 1; font-size: 0.85rem; padding: 8px 12px; }
+
+        .join-panel {
+            background: white;
+            border-radius: 32px;
+            padding: 32px 24px;
+            max-width: 380px;
+            margin: 20px auto;
+            text-align: center;
+        }
+        .code-input {
+            font-size: 1.8rem;
+            letter-spacing: 6px;
+            text-align: center;
+            font-weight: 700;
+            font-family: monospace;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(6px);}
+            to { opacity: 1; transform: translateY(0);}
+        }
+
+        #emojiPicker {
+            position: fixed;
+            bottom: 90px;
+            left: 12px;
+            background: white;
+            border-radius: 24px;
+            display: none;
+            width: 280px;
+            max-height: 300px;
+            overflow-y: auto;
+            padding: 12px;
+            z-index: 1100;
+        }
+        #votePopup { z-index: 1101; }
+
+        @media (max-width: 600px) {
+            .dept-selector, .specific-dept-selector {
+                padding: 4px 12px;
+            }
+            .dept-selector select, .specific-dept-selector select {
+                font-size: 0.7rem;
+                padding: 4px 6px;
+                padding-right: 24px;
+            }
+            .chat-main {
+                padding: 100px 8px 80px 8px;
+            }
+        }
+
+        .reaction-container{
+    margin-top:8px;
+}
+
+.reaction-buttons{
+    display:flex;
+    gap:6px;
+    flex-wrap:wrap;
+    margin-top:4px;
+}
+
+.reaction-btn {
+    border: none;
+    background: #f5f7fa;
+    border-radius: 20px;
+    padding: 4px 8px;
+    font-size: 16px;
+    min-width: 36px;
+    height: 32px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: 0.2s ease;
+}
+
+.reaction-btn:hover {
+    background: #e9ecef;
+    transform: scale(1.05);
+}
+
+.reaction-counts{
+    margin-top:6px;
+    display:flex;
+    gap:6px;
+    flex-wrap:wrap;
+}
+
+.reaction-pill{
+    background:#eef3fc;
+    border-radius:20px;
+    padding:3px 8px;
+    font-size:0.75rem;
+    font-weight:600;
+}
+
+.typing-box{
+    padding:8px 14px;
+    color:#666;
+    font-size:0.8rem;
+    font-style:italic;
+}
+
+.dots span{
+    animation: blink 1.4s infinite;
+}
+
+.dots span:nth-child(2){
+    animation-delay:.2s;
+}
+
+.dots span:nth-child(3){
+    animation-delay:.4s;
+}
+
+@keyframes blink{
+    0%,100%{opacity:0.2;}
+    50%{opacity:1;}
+}
+
+.avatar {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    overflow: hidden;
+    background: linear-gradient(135deg, #007749, #00a86b);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: bold;
+    flex-shrink: 0;
+    font-size: 0.9rem;
+    border: 2px solid white;
+}
+
+.profile-btn{
+    width:40px;
+    height:40px;
+    border:none;
+    border-radius:50%;
+    background:rgba(255,255,255,0.12);
+    color:white;
+    font-size:1.2rem;
+    cursor:pointer;
+}
+
+.profile-modal{
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,0.65);
+    display:none;
+    align-items:center;
+    justify-content:center;
+    z-index:3000;
+}
+
+.profile-modal.active{
+    display:flex;
+}
+
+.profile-modal-content{
+    background:white;
+    width:90%;
+    max-width:360px;
+    border-radius:24px;
+    padding:24px;
+    position:relative;
+    animation:fadeIn .2s ease;
+}
+
+.close-profile-btn{
+    position:absolute;
+    top:12px;
+    right:12px;
+    border:none;
+    background:#f0f2f5;
+    width:34px;
+    height:34px;
+    border-radius:50%;
+    cursor:pointer;
+}
+
+.attachment-panel {
+    display: none;
+    position: absolute;
+    bottom: 70px;
+    left: 10px;
+    right: 10px;
+    background: white;
+    padding: 12px;
+    border-radius: 16px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+    z-index: 999;
+}
+
+.action-btn {
+    width: 42px;
+    height: 42px;
+    border: none;
+    border-radius: 50%;
+    background: #f5f7fa;
+    color: #007749;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.action-btn:hover {
+    background: #007749;
+    color: white;
+    transform: scale(1.06);
+}
+
+.action-btn:active {
+    transform: scale(0.96);
+}
+
+@media (max-width: 767px) {
+    #deptSelector {
+        top: 10px !important;
+    }
+}
+
+.voice-panel{
+    display:none;
+    position:fixed;
+    bottom:90px;
+    left:50%;
+    transform:translateX(-50%);
+    width:92%;
+    max-width:360px;
+    background:white;
+    border-radius:24px;
+    padding:18px;
+    box-shadow:0 10px 30px rgba(0,0,0,0.18);
+    z-index:9999;
+}
+
+.voice-header{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    font-weight:600;
+    margin-bottom:16px;
+}
+
+.recording-status{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin-bottom:16px;
+    font-size:1.1rem;
+    font-weight:600;
+}
+
+.record-dot{
+    width:12px;
+    height:12px;
+    border-radius:50%;
+    background:red;
+    animation:pulseRecord 1s infinite;
+}
+
+@keyframes pulseRecord{
+    0%{opacity:0.3;}
+    50%{opacity:1;}
+    100%{opacity:0.3;}
+}
+
+.voice-actions{
+    display:flex;
+    justify-content:center;
+    gap:18px;
+}
+
+.voice-action-btn{
+    width:60px;
+    height:60px;
+    border:none;
+    border-radius:50%;
+    color:white;
+    font-size:1.2rem;
+}
+
+.start-btn{
+    background:#25d366;
+}
+
+.stop-btn{
+    background:#e53935;
+}
+
+.profile-btn{
+    position:relative;
+    overflow:visible;
+}
+
+.profile-notification-badge{
+    position:absolute;
+    top:-4px;
+    right:-2px;
+    min-width:20px;
+    height:20px;
+    padding:0 6px;
+    border-radius:20px;
+    background:#ff3b30;
+    color:white;
+    font-size:0.7rem;
+    font-weight:700;
+    display:none;
+    align-items:center;
+    justify-content:center;
+    border:2px solid #00194A;
+    z-index:20;
+    animation:notificationPulse 1.2s infinite;
+}
+
+@keyframes notificationPulse{
+    0%{
+        transform:scale(1);
+    }
+    50%{
+        transform:scale(1.08);
+    }
+    100%{
+        transform:scale(1);
+    }
+}
+
+.file-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+
+    padding: 6px 10px;
+    margin-top: 6px;
+
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+
+    color: #0d6efd;
+    text-decoration: none !important;
+
+    font-size: 0.85rem;
+    font-weight: 500;
+
+    max-width: 100%;
+    word-break: break-word;
+}
+
+.file-link:hover {
+    background: #eaf2ff;
+    border-color: #cfe2ff;
+    transform: scale(1.01);
+}
+    </style>
+</head>
+<body>
+<div class="header-bar"></div>
+<nav class="navbar">
+    <div class="container-fluid d-flex justify-content-between align-items-center px-2">
+        <a class="navbar-brand" href="#" onclick="goFullScreen()">
+            <i class="fas fa-comments me-1"></i>
+            <span id="appTitle">App mode</span>
+        </a>    
+        <div class="d-flex align-items-center gap-2">
+            <div id="onlineUsersBadge" class="online-stats"><i class="fas fa-circle"></i> <span id="onlineCount">0</span> online</div>
+            <div id="userInfo" class="user-badge"><i class="fas fa-id-card me-1"></i><span id="userName">Not logged in</span></div>
+            <button id="profileBtn" class="profile-btn">
+
+                <div class="profile-notification-badge" id="profileNotificationBadge">
+                    0
+                </div>
+
+                <img
+                    id="profileBtnImage"
+                    src=""
+                    style="width:100%;height:100%;border-radius:50%;object-fit:cover;display:none;"
+                >
+
+                <i id="profileBtnIcon" class="fas fa-user-circle"></i>
+
+            </button>
+        </div>
+    </div>
+</nav>
+
+<div id="deptSelector" class="dept-selector" style="display: none;">
+    <i class="fas fa-paper-plane"></i>
+    <select id="recipientSelect">
+        <option value="all">All Dept</option>
+        <option value="my">My Dept</option>
+        <option value="specific">Specific Dept</option>
+    </select>
+</div>
+<div id="specificDeptSelector" class="specific-dept-selector">
+    <i class="fas fa-building"></i>
+    <select id="targetDeptSelect"><option value="">Select department...</option></select>
+</div>
+<div id="voteIndicator" class="vote-mode-indicator"><i class="fas fa-chart-simple me-1"></i> Poll mode</div>
+
+<div class="chat-main" id="chatMain">
+    <div class="chat-container">
+        <div id="loginPanel">
+            <div class="join-panel">
+                <i class="fas fa-key fa-2x mb-2" style="color: var(--sa-green);"></i>
+                <h5>Access code</h5>
+                <p class="text-muted small">4-digit code</p>
+                <input type="text" id="accessCode" class="form-control code-input mb-3" maxlength="4" placeholder="0000" autocomplete="off" inputmode="numeric">
+                <button id="loginBtn" class="btn w-100 py-2" style="background: var(--sa-green); color: white; border-radius: 40px;">Enter Chat</button>
+                <hr class="my-3">
+                <small class="text-muted">secure team access</small>
+            </div>
+        </div>
+
+        <div id="chatArea" style="display: none;">
+            <div class="mb-2">
+                <input
+                    type="text"
+                    id="searchInput"
+                    class="form-control"
+                    placeholder="Search messages by department..."
+                >
+            </div>
+            <div id="messagesList"></div>
+            <div id="typingIndicator" class="typing-box" style="display:none;">
+            <span id="typingText">Someone is typing</span>
+            <span class="dots">
+                <span>.</span><span>.</span><span>.</span>
+            </span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="input-bar" id="inputBar" style="display: none;">
+    <div id="replyPreview" style="display:none;background:#f1f3f5;padding:8px;border-radius:8px;margin-bottom:8px;">
+   <div id="replyText"></div>
+
+   <button onclick="cancelReply()" style="border:none;background:none;color:red;font-size:12px;">
+      Cancel
+   </button>
+</div>
+    <div class="input-primary">
+        <textarea id="messageInput" class="input-field" rows="1" placeholder="Type message..."></textarea>
+        <button id="expandBtn" class="expand-toggle" title="More actions"><i class="fas fa-plus-circle"></i></button>
+        <button id="sendBtn" class="send-btn" type="button"><i class="fas fa-paper-plane"></i></button>
+    </div>
+    <div id="actionDrawer" class="action-drawer">
+        
+        <div class="icon-strip">
+            <button id="emojiBtn" class="action-icon" title="Emoji"><i class="far fa-smile-wink"></i></button>
+            <button id="imageBtn" class="action-icon" title="Image URL"><i class="fas fa-image"></i></button>
+            <button id="docBtn" class="action-btn" title="Send document">
+                <i class="fas fa-file-alt"></i>
+            </button>
+
+            <button id="voteToggleBtn" class="action-icon" title="Create poll"><i class="fas fa-chart-simple"></i></button>
+            <button id="voiceBtn" class="action-btn" title="Voice note">
+                <i class="fas fa-microphone"></i>
+            </button>
+        </div>
+        
+    </div>
+</div>
+
+
+<div id="voicePanel" class="voice-panel">
+
+    <div class="voice-header">
+        <i class="fas fa-microphone"></i>
+        <span>Voice message</span>
+    </div>
+
+    <div class="recording-status">
+        <div class="record-dot"></div>
+        <span id="recordingTime">00:00</span>
+    </div>
+
+    <div class="voice-actions">
+        <button id="startRecordBtn" class="voice-action-btn start-btn">
+            <i class="fas fa-circle"></i>
+        </button>
+
+        <button id="stopRecordBtn" class="voice-action-btn stop-btn">
+            <i class="fas fa-stop"></i>
+        </button>
+    </div>
+
+    <audio hidden id="audioPreview" controls style="display:none;width:100%;margin-top:12px;"></audio>
+
+    <button id="sendVoiceBtn" class="btn btn-success w-100 mt-3" style="display:none;">
+        Send Voice Note
+    </button>
+</div>
+
+<input
+    type="file"
+    id="realFileInput"
+    hidden
+    accept="
+        image/*,
+        application/pdf,
+        .doc,
+        .docx,
+        .xls,
+        .xlsx,
+        .ppt,
+        .pptx,
+        .txt
+    "
+>
+
+<div id="votePopup" style="display: none; position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%); background: white; border-radius: 28px; padding: 18px; width: 90%; max-width: 340px; z-index: 1100;">
+    <h6 class="mb-2"><i class="fas fa-chart-simple me-2"></i>New poll</h6>
+    <input type="text" id="voteOptionA" class="form-control mb-2" placeholder="Option A">
+    <input type="text" id="voteOptionB" class="form-control mb-2" placeholder="Option B">
+    <div class="d-flex gap-2 mt-2">
+        <button id="submitVoteBtn" class="btn btn-success flex-grow-1">Post Poll</button>
+        <button id="cancelVoteBtn" class="btn btn-outline-secondary">Cancel</button>
+    </div>
+</div>
+
+<div id="imageModal" style="position: fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.9); z-index:2000; display:none; align-items:center; justify-content:center; cursor:pointer;">
+    <img id="modalImage" style="max-width:90%; max-height:90%; border-radius:20px;">
+</div>
+<div id="emojiPicker">
+    <div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px;" id="emojiGrid"></div>
+</div>
+
+<div id="profileModal" class="profile-modal">
+    <div class="profile-modal-content">
+        <button id="closeProfileModal" class="close-profile-btn">
+            <i class="fas fa-times"></i>
+        </button>
+
+        <h5 class="mb-3">Update Profile Image</h5>
+
+        <div style="display:flex;justify-content:center;margin-bottom:20px;">
+
+    <div
+        onclick="document.getElementById('profileImageInput').click()"
+        style="
+            width:120px;
+            height:120px;
+            border-radius:50%;
+            position:relative;
+            cursor:pointer;
+            overflow:hidden;
+            background:#f1f3f5;
+            border:4px solid #f8f9fa;
+        "
+    >
+
+        <img
+            id="profilePreviewImage"
+            src=""
+            style="
+                width:100%;
+                height:100%;
+                object-fit:cover;
+                display:none;
+            "
+        >
+
+        <div
+            id="profilePreviewFallback"
+            style="
+                width:100%;
+                height:100%;
+                display:flex;
+                align-items:center;
+                justify-content:center;
+                font-size:3rem;
+                color:#999;
+            "
+        >
+            <i class="fas fa-user"></i>
+        </div>
+
+        <div
+            style="
+                position:absolute;
+                bottom:6px;
+                right:6px;
+                width:34px;
+                height:34px;
+                border-radius:50%;
+                background:#007749;
+                color:white;
+                display:flex;
+                align-items:center;
+                justify-content:center;
+                box-shadow:0 2px 8px rgba(0,0,0,0.2);
+            "
+        >
+            <i class="fas fa-camera"></i>
+        </div>
+
+    </div>
+
+</div>
+
+<input
+    type="file"
+    id="profileImageInput"
+    hidden
+    accept="image/*"
+>
+
+<button onclick="saveProfileImage()" class="btn btn-success w-100 mb-2">
+    Save Profile Image
+</button>
+
+<button
+    onclick="removeProfileImage()"
+    class="btn btn-outline-danger w-100"
+>
+    Remove Profile Image
+</button>
+
+    </div>
+</div>
+
+<div id="onlineUsersModal"
+    style="
+        position:fixed;
+        inset:0;
+        background:rgba(0,0,0,0.65);
+        display:none;
+        align-items:center;
+        justify-content:center;
+        z-index:5000;
+    ">
+
+    <div
+        style="
+            background:white;
+            width:92%;
+            max-width:380px;
+            border-radius:24px;
+            padding:20px;
+            max-height:70vh;
+            overflow-y:auto;
+            animation:fadeIn .2s ease;
+        "
+    >
+
+        <div
+            style="
+                display:flex;
+                justify-content:space-between;
+                align-items:center;
+                margin-bottom:16px;
+            "
+        >
+            <h5 style="margin:0;">
+                <i class="fas fa-circle" style="color:#2ecc71;"></i>
+                Online Users
+            </h5>
+
+            <button
+                id="closeOnlineUsersModal"
+                style="
+                    border:none;
+                    background:#f1f3f5;
+                    width:34px;
+                    height:34px;
+                    border-radius:50%;
+                    cursor:pointer;
+                "
+            >
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+
+        <div id="onlineUsersList"></div>
+
+    </div>
+</div>
+
+<script>
+    const SUPABASE_URL = "https://rqbjgoevotkaipwoakvj.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJxYmpnb2V2b3RrYWlwd29ha3ZqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg2NDgyODMsImV4cCI6MjA5NDIyNDI4M30.RIP0G32F12Fnf9v5ZiTE5RfEqSHEdpP58iuXxK8803Q";
+    const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    
+    let currentUser = null;
+    let messageSubscription = null;
+    let isVoteMode = false;
+    let replyingTo = null;
+    let allDepartments = [];
+    let refreshInterval = null;
+
+    let presenceChannel = null;
+    let onlineUsers = {};
+
+let lastMessageCount = 0;
+
+let unreadMessages = 0;
+let windowFocused = true;
+
+const ZACK = {
+    name: "Zack (Tiangmaatla Bot)",
+    profile: "/images/chatboot-profile.jfif",
+    department: "ALL"
+};
+
+const zackMessages = {
+    morning: [
+        "Good morning, team. Zack here. Plan your tasks clearly and stay focused.",
+        "Morning, team. Zack here. Start strong — organize your priorities early.",
+        "Good morning. Zack here. Today is a new chance to improve your workflow.",
+        "Morning. Zack here. Clear head, clear plan, productive day.",
+        "Good morning. Zack here. Let’s make today count — one task at a time.",
+        "Morning, everyone. Zack here. Review your goals from yesterday before starting new ones.",
+        "Good morning. Zack here. A well-planned morning leads to a calm afternoon.",
+        "Morning. Zack here. Don’t confuse movement with progress. Plan wisely.",
+        "Good morning. Zack here. Progress over perfection — but start early.",
+        "Morning. Zack here. If you have time to check Slack twice, you have time to prioritize once.",
+        "Good morning. Zack here. Small daily improvements add up.",
+        "Morning. Zack here. Before you dive in, ask what is the most important task today.",
+        "Good morning. Zack here. A task without a deadline is just a wish.",
+        "Morning. Zack here. Start with the task you have been avoiding.",
+        "Good morning. Zack here. Don’t let urgent things overshadow important ones.",
+        "Morning. Zack here. Clear desk, clear calendar, clear mind.",
+        "Good morning. Zack here. If it takes two minutes, do it now.",
+        "Morning. Zack here. You don’t need motivation — you need momentum.",
+        "Good morning. Zack here. Let’s beat yesterday’s best.",
+        "Morning. Zack here. Remember that multitasking is usually task-switching.",
+        "Good morning. Zack here. Set three main goals for today. No more.",
+        "Morning. Zack here. The first hour sets the tone — protect it.",
+        "Good morning. Zack here. Don’t check email before checking your priorities.",
+        "Morning. Zack here. Being busy isn’t the same as being effective.",
+        "Good morning. Zack here. Start with what matters most — even if it is hard.",
+        "Morning. Zack here. Discipline in the morning means freedom in the afternoon.",
+        "Good morning. Zack here. You can do anything, but not everything — choose wisely.",
+        "Morning. Zack here. What is one thing you can finish before lunch?",
+        "Good morning. Zack here. Energy follows action — just start.",
+        "Morning. Zack here. Today’s goal is fewer interruptions and more completions.",
+        "Good morning. Zack here. No firefighting before coffee — plan first.",
+        "Morning. Zack here. A five-minute plan saves twenty minutes of confusion.",
+        "Good morning. Zack here. Don’t let Slack dictate your morning.",
+        "Morning. Zack here. Your calendar should reflect your priorities, not other people’s.",
+        "Good morning. Zack here. Progress bar is at zero percent — let’s change that.",
+        "Morning. Zack here. If you don’t plan your day, someone else will.",
+        "Good morning. Zack here. Done is better than perfect.",
+        "Morning. Zack here. Start quiet, then conquer.",
+        "Good morning. Zack here. No reaction — just action.",
+        "Morning. Zack here. What worked yesterday? Do more of that.",
+        "Good morning. Zack here. Today’s challenge is to finish one task before 10 AM.",
+        "Morning. Zack here. Don’t let small fires burn your whole morning.",
+        "Good morning. Zack here. Your focus is your superpower — don’t waste it.",
+        "Morning. Zack here. Treat your calendar like a budget — spend time wisely.",
+        "Good morning. Zack here. If you feel overwhelmed, pick one task. Just one.",
+        "Morning. Zack here. Consistency beats intensity — start steady.",
+        "Good morning. Zack here. Don’t let yesterday’s unfinished work ruin today.",
+        "Morning. Zack here. A good morning routine is a silent win.",
+        "Good morning. Zack here. Let’s earn our afternoon break.",
+        "Morning. Zack here. Clear intention plus clear action equals clear results.",
+        "Good morning. Zack here. Arrive mentally before you arrive logistically.",
+        "Morning. Zack here. Silence notifications for the first 30 minutes.",
+        "Good morning. Zack here. Your morning mood sets the team tone.",
+        "Morning. Zack here. No drama before 9 AM — just tasks.",
+        "Good morning. Zack here. Start with facts, not feelings.",
+        "Morning. Zack here. A written list beats a mental one.",
+        "Good morning. Zack here. Today is not a rehearsal — deliver.",
+        "Morning. Zack here. Check your deadlines now, not at 4 PM.",
+        "Good morning. Zack here. One task fully done is better than five half done.",
+        "Morning. Zack here. Don’t wait for the perfect moment. Start.",
+        "Good morning. Zack here. Your future self at 5 PM will thank you.",
+        "Morning. Zack here. Clear communication starts with clear thinking.",
+        "Good morning. Zack here. Respect your own morning energy.",
+        "Morning. Zack here. No meetings before you complete your first task.",
+        "Good morning. Zack here. Update your status early.",
+        "Morning. Zack here. Small actions repeated create results.",
+        "Good morning. Zack here. Don’t borrow stress from next week.",
+        "Morning. Zack here. Start with what you control.",
+        "Good morning. Zack here. A calm start prevents a chaotic finish.",
+        "Morning. Zack here. Your attention is currency — spend it well.",
+        "Good morning. Zack here. Before you help others, secure your own tasks.",
+        "Morning. Zack here. Today’s priority is clarity over speed.",
+        "Good morning. Zack here. Don’t let urgency become an addiction.",
+        "Morning. Zack here. Write down three wins you want by end of day.",
+        "Good morning. Zack here. Progress is a series of small completions.",
+        "Morning. Zack here. No open loops from yesterday — close them now.",
+        "Good morning. Zack here. Your system should work for you, not against you.",
+        "Morning. Zack here. One hour of deep work beats four hours of distraction.",
+        "Good morning. Zack here. Start with the hardest task. It only gets easier.",
+        "Morning. Zack here. If you feel behind, pause and reset — do not panic.",
+        "Good morning. Zack here. Trust your planning. Execute.",
+        "Morning. Zack here. No need to overcommunicate — just update what matters.",
+        "Good morning. Zack here. Your morning checklist is your anchor.",
+        "Morning. Zack here. Don’t let perfection delay the first step.",
+        "Good morning. Zack here. The quality of your start determines your finish.",
+        "Morning. Zack here. Be where your attention is needed most.",
+        "Good morning. Zack here. Silence the noise. Focus on your lane.",
+        "Morning. Zack here. Today’s output is built on today’s input. Choose wisely.",
+        "Good morning. Zack here. No heroics — just consistent execution.",
+        "Morning. Zack here. If you can’t measure it, you can’t manage it.",
+        "Good morning. Zack here. Your calendar is a commitment, not a suggestion.",
+        "Morning. Zack here. Don’t start ten things. Finish two.",
+        "Good morning. Zack here. Before you react, respond with your plan.",
+        "Morning. Zack here. Every task has a cost — prioritize accordingly.",
+        "Good morning. Zack here. Show up prepared. Stay organized.",
+        "Morning. Zack here. Today’s goal is to reduce your open tasks by half.",
+        "Good morning. Zack here. Momentum is built minute by minute."
+    ],
+
+    midmorning: [
+        "Quick check. Zack here. Keep your reports updated and accurate.",
+        "Stay on track. Zack here. Make sure your tasks are progressing properly.",
+        "Reminder. Zack here. Don’t let pending work pile up.",
+        "Midmorning check. Zack here. Still on track?",
+        "Halfway to lunch. Zack here. Review your morning so far.",
+        "Zack here. Pause for sixty seconds — re-prioritize if needed.",
+        "Midmorning pulse. Zack here. Is your most important task moving forward?",
+        "Quick reminder. Zack here. Done is better than perfect at this stage.",
+        "Zack here. If you are stuck, ask for help earlier, not later.",
+        "Midmorning. Zack here. No drama — just updates. Keep it clean.",
+        "Zack here. Don’t disappear — a quick status helps the team.",
+        "Morning progress check. Zack here. Any blockers? Speak now.",
+        "Zack here. If it is not in the system, it does not exist.",
+        "Midmorning. Zack here. Good time to close unnecessary tabs.",
+        "Zack here. Check your deadlines. Any risks?",
+        "Midmorning reminder. Zack here. You cannot pour from an empty cup. Take five if needed.",
+        "Zack here. Silence notifications for forty-five minutes. Focus.",
+        "Midmorning. Zack here. One small win before lunch feels good.",
+        "Zack here. If you are waiting on someone, ping them now.",
+        "Midmorning. Zack here. Don’t let perfect be the enemy of progress.",
+        "Zack here. Quick poll. Are your tasks on track? Reply with thumbs up or orange heart for blocked.",
+        "Midmorning. Zack here. Your future self will thank you for staying organized now.",
+        "Zack here. Avoid the 11 AM slump — hydrate and stretch.",
+        "Midmorning. Zack here. No news is not always good news. Communicate.",
+        "Zack here. Protect your focus — it is fragile this time of day.",
+        "Midmorning. Zack here. If a task takes five minutes, finish it immediately.",
+        "Zack here. Busy does not equal productive. What have you actually completed?",
+        "Midmorning. Zack here. Check your priority list again. Did it change?",
+        "Zack here. Small progress is better than no progress.",
+        "Midmorning. Zack here. Don’t start new tasks until current ones are wrapped.",
+        "Zack here. If you are stuck in a meeting loop, block focus time now.",
+        "Midmorning. Zack here. Your brain is still fresh — use it on hard things.",
+        "Zack here. Quick audit. Open loops — close one.",
+        "Midmorning. Zack here. Avoid context switching. Finish first.",
+        "Zack here. If it is not urgent, schedule it for later.",
+        "Midmorning. Zack here. Reminder — updates do not need to be long.",
+        "Zack here. Check your energy. Are you working or just reacting?",
+        "Midmorning. Zack here. Close the email tab. Seriously.",
+        "Zack here. If you are waiting, document it.",
+        "Midmorning. Zack here. Don’t let peer pressure rush your quality.",
+        "Zack here. Your checklist is your friend — trust it.",
+        "Midmorning. Zack here. Finish what you start before moving on.",
+        "Zack here. Avoid the trap of doing one more thing before the main task.",
+        "Midmorning. Zack here. If it feels messy, pause and reorganize.",
+        "Zack here. Reminder — tasks without owners are just ideas.",
+        "Midmorning. Zack here. Good time to update your status.",
+        "Zack here. Progress check in two hours. Make it count.",
+        "Midmorning. Zack here. Your morning momentum is real — protect it.",
+        "Zack here. If you feel distracted, write down the distraction and return to work.",
+        "Midmorning. Zack here. No task is too small to track.",
+        "Zack here. Reminder — communication reduces rework.",
+        "Midmorning. Zack here. What’s the one thing you must finish by 1 PM?",
+        "Zack here. Midmorning is not for browsing. It is for building.",
+        "Midmorning. Zack here. Don’t let other people’s urgency become your emergency.",
+        "Zack here. Check your progress against your morning plan.",
+        "Midmorning. Zack here. If you are ahead, stay ahead. If you are behind, adjust.",
+        "Zack here. A thirty-second status update saves thirty minutes of confusion.",
+        "Midmorning. Zack here. Your attention span is a resource — spend it deliberately.",
+        "Zack here. Reminder — done tasks reduce cognitive load.",
+        "Midmorning. Zack here. Block fifteen minutes to review all open tickets.",
+        "Zack here. If you have not started your main task yet, start now.",
+        "Midmorning. Zack here. No shame in reprioritizing. Just communicate it.",
+        "Zack here. Silence is fine. But silence without updates is not.",
+        "Midmorning. Zack here. Quick check — any dependencies about to fail?",
+        "Zack here. Your system should make you faster, not slower.",
+        "Midmorning. Zack here. If you are tired, switch to a low-focus task but stay active.",
+        "Zack here. Do not wait for 3 PM to ask for help.",
+        "Midmorning. Zack here. Review your calendar for the next two hours.",
+        "Zack here. Reminder — every completed task is a win.",
+        "Midmorning. Zack here. Your team needs you present, not perfect.",
+        "Zack here. If a meeting is not adding value, leave or decline.",
+        "Midmorning. Zack here. One clear update is better than five vague ones.",
+        "Zack here. Don’t let midmorning drift become afternoon panic.",
+        "Midmorning. Zack here. Check your task timer if you use one.",
+        "Zack here. Progress over perfection applies now.",
+        "Midmorning. Zack here. If you are blocked, escalate clearly with context.",
+        "Zack here. Your morning wins are stacking. Keep going.",
+        "Midmorning. Zack here. Close any tab that is not directly related to current work.",
+        "Zack here. Avoid the comparison trap. Focus on your own delivery.",
+        "Midmorning. Zack here. Reminder — consistency beats intensity at this hour.",
+        "Zack here. If you are waiting for approval, document that wait.",
+        "Midmorning. Zack here. Your checklist is not optional.",
+        "Zack here. One hour of focused work now saves two hours later.",
+        "Midmorning. Zack here. Don’t refresh email every five minutes.",
+        "Zack here. Reminder — your status is not private. Share it.",
+        "Midmorning. Zack here. If you have nothing to update, say that.",
+        "Zack here. A clean midmorning leads to a clean afternoon.",
+        "Midmorning. Zack here. Don’t let small wins trick you into stopping.",
+        "Zack here. Check your energy. Stand up. Stretch. Return focused.",
+        "Midmorning. Zack here. Reminder — communication is part of the task.",
+        "Zack here. If you are done early, help someone who is blocked.",
+        "Midmorning. Zack here. Your progress bar should move every hour.",
+        "Zack here. No new projects before lunch. Finish first.",
+        "Midmorning. Zack here. Trust your plan. Execute.",
+        "Zack here. Reminder — pending work is invisible work. Make it visible.",
+        "Midmorning. Zack here. Your future self at 4 PM will appreciate this focus.",
+        "Zack here. Don’t ignore the hard task. Attack it now."
+    ],
+
+    afternoon: [
+        "Afternoon push. Zack here. Stay consistent and finish your tasks.",
+        "Keep going. Zack here. Productivity matters in the second half of the day.",
+        "Focus time. Zack here. Wrap up pending work properly.",
+        "Zack here. Lunch is over — time to deliver.",
+        "Afternoon. Zack here. Don’t let the post-lunch fog win.",
+        "Zack here. What is one thing you can finish by 3 PM?",
+        "Afternoon reminder. Zack here. You don’t have to be perfect — just done.",
+        "Zack here. Avoid the 2 PM procrastination spiral.",
+        "Afternoon. Zack here. If you feel tired, switch to a lighter task but stay active.",
+        "Zack here. Before you snack, check your task list.",
+        "Afternoon. Zack here. No new meetings unless critical. Protect focus time.",
+        "Zack here. Block ninety minutes of deep work right now.",
+        "Afternoon. Zack here. The finish line is closer than you think.",
+        "Zack here. Your future self tomorrow will appreciate today’s discipline.",
+        "Afternoon. Zack here. What got postponed this morning? Do it now.",
+        "Zack here. Avoid the “I will do it tomorrow” trap — it is not tomorrow yet.",
+        "Afternoon. Zack here. Small finishes are better than big starts.",
+        "Zack here. Clean up what you started. No half-done tasks.",
+        "Afternoon. Zack here. Your energy will return — but not if you stop.",
+        "Zack here. Reminder — every completed task reduces mental clutter.",
+        "Afternoon. Zack here. If you are stuck, change your environment for ten minutes.",
+        "Zack here. Don’t let perfection delay closure.",
+        "Afternoon. Zack here. Being busy at 4 PM does not impress anyone. Finishing does.",
+        "Zack here. Close the loops before the end of day.",
+        "Afternoon. Zack here. One hour of focused afternoon work beats three hours of distraction.",
+        "Zack here. No more “just one quick thing” — finish the main thing first.",
+        "Afternoon. Zack here. Your afternoon checklist — important, urgent, or neither?",
+        "Zack here. Momentum is real. Protect it.",
+        "Afternoon. Zack here. If you feel overwhelmed, write down three things to finish today. No more.",
+        "Zack here. Silence your phone for the next hour.",
+        "Afternoon. Zack here. Good afternoon equals good evening.",
+        "Zack here. Don’t let small wins trick you into stopping early.",
+        "Afternoon. Zack here. Task almost done? Push through — do not save it for tomorrow.",
+        "Zack here. Reminder — done tasks are better than perfect drafts.",
+        "Afternoon. Zack here. If it is not moving forward, escalate it.",
+        "Zack here. You don’t need motivation — you need closure.",
+        "Afternoon. Zack here. Check your energy. Hydrate. Move. Then finish.",
+        "Zack here. Don’t leave your future self a mess.",
+        "Afternoon. Zack here. Team update — no drama, just delivery.",
+        "Zack here. The last two hours of workday are gold — use them.",
+        "Afternoon. Zack here. Future you at 5 PM will thank you.",
+        "Zack here. One more push before wind-down.",
+        "Afternoon. Zack here. Don’t start new things — finish old things.",
+        "Zack here. 3 PM check. What is left? Let’s close it clean.",
+        "Afternoon. Zack here. Your attention is fading — protect the remaining focus.",
+        "Zack here. No new Slack threads unless critical.",
+        "Afternoon. Zack here. Reminder — finishing is a skill. Practice it now.",
+        "Zack here. If a task takes less than ten minutes, do it immediately.",
+        "Afternoon. Zack here. Your checklist should be shorter now than at noon.",
+        "Zack here. Avoid the 4 PM panic by working steadily now.",
+        "Afternoon. Zack here. Progress is progress, no matter how small.",
+        "Zack here. If you are waiting, document expected resolution time.",
+        "Afternoon. Zack here. Reminder — your afternoon output defines your day’s success.",
+        "Zack here. Don’t let one difficult task freeze the rest of your work.",
+        "Afternoon. Zack here. Solve, then move on.",
+        "Zack here. Your calendar after 2 PM should be for delivery, not discovery.",
+        "Afternoon. Zack here. Silence all non-essential notifications.",
+        "Zack here. If you have two hours left, treat them like two separate one-hour blocks.",
+        "Afternoon. Zack here. Reminder — closure creates clarity.",
+        "Zack here. Do not open new research tabs now. Execute.",
+        "Afternoon. Zack here. Your energy dip is normal. Push through with small actions.",
+        "Zack here. One completed task now equals one less worry tonight.",
+        "Afternoon. Zack here. Check your remaining tasks against your energy level. Be honest.",
+        "Zack here. Don’t attend meetings that could be async updates.",
+        "Afternoon. Zack here. Reminder — done is a verb. Activate it.",
+        "Zack here. If you are ahead, stay ahead by helping others finish.",
+        "Afternoon. Zack here. No new commitments after 3 PM unless urgent.",
+        "Zack here. Your afternoon focus is limited. Spend it wisely.",
+        "Afternoon. Zack here. Reminder — pending work becomes tomorrow’s backlog.",
+        "Zack here. Close your oldest open task first.",
+        "Afternoon. Zack here. If you feel stuck, write down exactly what is blocking you.",
+        "Zack here. The last hour of workday should be for finishing, not starting.",
+        "Afternoon. Zack here. Reminder — communication is cheap. Rework is expensive.",
+        "Zack here. One clear update at 4 PM is enough.",
+        "Afternoon. Zack here. Don’t let perfectionism steal your afternoon.",
+        "Zack here. Your team’s afternoon efficiency depends on your updates.",
+        "Afternoon. Zack here. Reminder — no task is complete until it is verified.",
+        "Zack here. If it can wait until tomorrow, schedule it and stop thinking about it.",
+        "Afternoon. Zack here. Your future self tomorrow will thank today’s closure.",
+        "Zack here. Avoid the “I will just reply quickly” trap.",
+        "Afternoon. Zack here. Reminder — momentum is earned minute by minute.",
+        "Zack here. Check your status. Update it. Move on.",
+        "Afternoon. Zack here. No meeting requests after 3 PM without approval.",
+        "Zack here. Your afternoon output defines your end-of-day feeling.",
+        "Afternoon. Zack here. Reminder — clarity beats cleverness.",
+        "Zack here. If you are tired, do one small task to regain momentum.",
+        "Afternoon. Zack here. Don’t leave loose ends for Friday afternoon.",
+        "Zack here. Your checklist should reflect completion, not activity.",
+        "Afternoon. Zack here. Reminder — finishing feels better than starting.",
+        "Zack here. Protect the last two hours like gold.",
+        "Afternoon. Zack here. No new brainstorming now — just execution.",
+        "Zack here. If you are waiting for someone, set a reminder and switch tasks.",
+        "Afternoon. Zack here. Reminder — your time is not infinite. Close tasks.",
+        "Zack here. One final review of today’s must-finish list.",
+        "Afternoon. Zack here. Your energy will return tomorrow. For now, close what you can.",
+        "Zack here. Done is the goal. Not perfect. Not pretty. Done."
+    ],
+
+    closing: [
+        "End of day. Zack here. Save your work and prepare for tomorrow.",
+        "Great effort today, team. Zack here. Make sure everything is updated.",
+        "We are done for today. Zack here. Don’t leave anything pending.",
+        "Zack here. Log out cleanly — update statuses before leaving.",
+        "Closing time. Zack here. Good work today. See you tomorrow.",
+        "Zack here. Before you go — one sentence update on key tasks.",
+        "End of day. Zack here. Clear your desk. Clear your mind.",
+        "Zack here. Don’t carry tomorrow’s stress into tonight.",
+        "Closing. Zack here. Pending items — either finish or reschedule with intent.",
+        "Zack here. Great team effort. Now go recharge.",
+        "End of day. Zack here. No guilt — just closure.",
+        "Closing. Zack here. Tomorrow’s problems need a rested brain.",
+        "Zack here. Wrap up comms. See you in the morning.",
+        "End of day. Zack here. If you did not finish it, do not ignore it — plan it.",
+        "Zack here. Good shutdown routine — check, save, close, breathe.",
+        "Closing. Zack here. No late night messages please. We will handle it tomorrow.",
+        "Zack here. Respect your own off-time — it boosts tomorrow’s focus.",
+        "End of day. Zack here. Progress, not perfection.",
+        "Zack here. Everyone contributed today. Thank you.",
+        "Closing. Zack here. Quick reminder — done is a feeling. Log it.",
+        "Zack here. Don’t leave Slack open unless necessary.",
+        "End of day. Zack here. Tomorrow’s priorities already set? Good.",
+        "Zack here. Shutdown checklist — saved, synced, signed off.",
+        "Closing. Zack here. Leave work at work — mentally too.",
+        "End of day. Zack here. No loose ends before weekend — but also no overtime drama.",
+        "Zack here. Final check — any blockers I should know about before morning?",
+        "Closing. Zack here. Tomorrow’s you will appreciate today’s cleanup.",
+        "Zack here. Good shift, team. Rest well.",
+        "End of day. Zack here. Do not reply to late messages until morning. It can wait.",
+        "Zack here. If it is not urgent, it is not for now.",
+        "Closing. Zack here. Respect the off-hours. Burnout helps no one.",
+        "Zack here. Today’s wins are logged. Tomorrow’s plan is ready.",
+        "End of day. Zack here. Close tabs, close tasks, close laptop.",
+        "Closing. Zack here. Last call for updates. Otherwise, see you tomorrow.",
+        "Zack here. Quick gratitude check — what went well today? Remember that.",
+        "End of day. Zack here. Disconnect fully. You have earned it.",
+        "Zack here. No guilt, no overtime, just closure.",
+        "Closing. Zack here. If it can wait until morning, let it wait.",
+        "Zack here. Clean exit equals clean start tomorrow.",
+        "End of day. Zack here. You did enough. Seriously.",
+        "Closing. Zack here. Do not check work chat until tomorrow morning.",
+        "Zack here. Tomorrow’s challenge — start fresh, not frustrated.",
+        "End of day. Zack here. Good night, team. Zack out.",
+        "Zack here. Final check — any fires? No? Good. Rest well.",
+        "Closing. Zack here. You have logged off — now mentally log off too.",
+        "Zack here. See you tomorrow. Same time, same focus.",
+        "End of day. Zack here. Your shutdown routine is a habit. Stick to it.",
+        "Zack here. Reminder — tomorrow starts with today’s preparation.",
+        "Closing. Zack here. No surprises tomorrow because you closed properly today.",
+        "Zack here. Good evening. Do not check work email until morning.",
+        "End of day. Zack here. Your brain needs rest to perform tomorrow.",
+        "Zack here. Final update logged. System closed.",
+        "Closing. Zack here. Thank your team members if they helped today.",
+        "Zack here. End of day checklist — updates, handoffs, logout.",
+        "End of day. Zack here. If you are done, be done. No half-closing.",
+        "Zack here. Your tomorrow self is watching. Close well.",
+        "Closing. Zack here. No open loops without notes.",
+        "Zack here. Reminder — unfinished work is not failure. Unplanned work is.",
+        "End of day. Zack here. Clear communication now prevents confusion at 9 AM.",
+        "Zack here. Good shutdown. Good night.",
+        "Closing. Zack here. Your team appreciates your clarity.",
+        "Zack here. If you are staying late, communicate why. Otherwise, log off.",
+        "End of day. Zack here. Tomorrow is a new day. Rest for it.",
+        "Zack here. Final status — all updates submitted.",
+        "Closing. Zack here. Your calendar for tomorrow is set. Good.",
+        "Zack here. Do not leave handwritten notes. Use the system.",
+        "End of day. Zack here. Your focus today was valuable. Protect your recovery.",
+        "Zack here. Reminder — closure is a team sport. Update everyone.",
+        "Closing. Zack here. See you tomorrow. Bring the same energy.",
+        "Zack here. Good work. Now disconnect completely.",
+        "End of day. Zack here. Your pending list should be intentional, not accidental.",
+        "Zack here. No messages after hours unless critical.",
+        "Closing. Zack here. Your future self says thank you.",
+        "Zack here. End of day routine — complete. Logging off.",
+        "End of day. Zack here. Respect your own stop time.",
+        "Zack here. Tomorrow’s priorities are already visible. Good.",
+        "Closing. Zack here. Your brain needs silence now.",
+        "Zack here. Good evening, team. Zack out.",
+        "End of day. Zack here. No unfinished business left unmentioned.",
+        "Zack here. Reminder — rest is productive.",
+        "Closing. Zack here. Your system is updated. Your mind can rest.",
+        "Zack here. One last scan of open tasks. Anything urgent? No. Good.",
+        "End of day. Zack here. Your commitment to closure shows professionalism.",
+        "Zack here. Do not reopen closed tasks tonight.",
+        "Closing. Zack here. Tomorrow’s plan is ready. Tonight’s rest is mandatory.",
+        "Zack here. Good shutdown, everyone. See you tomorrow.",
+        "End of day. Zack here. No guilt. Just progress.",
+        "Zack here. Reminder — work that is not logged did not happen.",
+        "Closing. Zack here. Your evening is yours. Do not trade it for email.",
+        "Zack here. Final check — any pending approvals? No. Good night.",
+        "End of day. Zack here. Your consistency builds trust.",
+        "Zack here. Logged off with intention. Recommended for everyone.",
+        "Closing. Zack here. Tomorrow is another opportunity. Rest well.",
+        "Zack here. Great day, team. Now go be offline.",
+        "End of day. Zack here. Your output was clean. Your closure should be too.",
+        "Zack here. Reminder — done is better than perfect, especially at closing.",
+        "Closing. Zack here. Final update sent. System offline."
+    ],
+
+    friday: [
+        "Friday. Zack here. Finish strong and enjoy your weekend.",
+        "Friday. Zack here. Close tasks properly so Monday is not painful.",
+        "Friday morning. Zack here. Light day, but do not ghost your work.",
+        "Zack here. Last workday of the week — stay professional till the end.",
+        "Friday reminder. Zack here. Weekend starts after work, not before.",
+        "Zack here. Don’t let Friday slack turn into Monday panic.",
+        "Friday. Zack here. Quick wins only — but win them cleanly.",
+        "Zack here. Tie up loose ends. Future Monday you will send a thank-you note.",
+        "Friday. Zack here. Good Friday energy equals good Monday recovery.",
+        "Zack here. No, you cannot leave early unless work is done. Then yes.",
+        "Friday. Zack here. Friday checklist — updates, handoffs, out-of-office if needed.",
+        "Zack here. Don’t start big projects on Friday. Finish small ones.",
+        "Friday. Zack here. One last push before the weekend rest.",
+        "Zack here. Clean desk equals clear weekend.",
+        "Friday. Zack here. No half-finished tasks left behind.",
+        "Zack here. Respect the Friday shutdown routine.",
+        "Friday. Zack here. Weekend starts when work ends — not when you mentally check out.",
+        "Zack here. Quick Friday wins — update statuses, reply to pending, sign off clean.",
+        "Friday. Zack here. Don’t leave your team hanging before Monday.",
+        "Zack here. One sentence per task — done or planned. That is all.",
+        "Friday. Zack here. Leave work like you would want to find it.",
+        "Zack here. Friday is not a free pass — but it is a finish line.",
+        "Friday. Zack here. No new meetings after 2 PM unless urgent.",
+        "Zack here. No new projects on Friday afternoon.",
+        "Friday. Zack here. Done is better than perfect. Then weekend.",
+        "Zack here. Closing early? Tell the team first.",
+        "Friday. Zack here. If it is not critical, schedule it for next week.",
+        "Zack here. Friday afternoon focus — wrap, reply, relax.",
+        "Friday. Zack here. Good week, team. Now go recover.",
+        "Zack here. Don’t send Monday problems on Friday evening.",
+        "Friday. Zack here. Quick check — anything urgent before weekend? No. Great.",
+        "Zack here. Respect your own off-time. It starts when you log off.",
+        "Friday. Zack here. Final Friday update — good work, everyone.",
+        "Zack here. No Slack spiral on Friday. Finish and vanish cleanly.",
+        "Friday. Zack here. Weekend rule — no guilt, no work chat, just rest.",
+        "Zack here. You survived another week. Be proud.",
+        "Friday. Zack here. One last focus block before freedom.",
+        "Zack here. Clean Friday equals clean Monday.",
+        "Friday. Zack here. Don’t let pending tasks haunt your weekend.",
+        "Zack here. Set Monday’s priority now — then forget work.",
+        "Friday. Zack here. Low drama, high finish.",
+        "Zack here. Weekend starts after you update your status.",
+        "Friday. Zack here. Good job this week. Now log off with confidence.",
+        "Zack here. Final check — out-of-office on? Good. Enjoy.",
+        "Friday. Zack here. Happy Friday, team. See you Monday. Zack out.",
+        "Friday. Zack here. Your Friday shutdown determines your Monday start.",
+        "Zack here. No new requests after 3 PM on Friday.",
+        "Friday. Zack here. Tie every loose end you can. Defer the rest with notes.",
+        "Zack here. One hour of Friday cleanup saves two hours on Monday.",
+        "Friday. Zack here. Do not leave comments like “will do Monday” without dates.",
+        "Zack here. Friday is for closure, not creativity.",
+        "Friday. Zack here. Your out-of-office message is part of your task. Set it.",
+        "Zack here. If a task is not urgent, schedule it for next week and close it mentally.",
+        "Friday. Zack here. Your team deserves a clean handoff. Provide it.",
+        "Zack here. Friday afternoon is for finishing, not firefighting.",
+        "Friday. Zack here. No meetings after 2 PM unless something is on fire.",
+        "Zack here. Respect Friday focus hours. Others want to finish too.",
+        "Friday. Zack here. Your Monday morning self will thank Friday afternoon you.",
+        "Zack here. One final review of next week’s priorities. Then stop.",
+        "Friday. Zack here. Clean Slack, clean tasks, clean mind.",
+        "Zack here. Weekend recovery is part of productivity. Do not skip it.",
+        "Friday. Zack here. If it is not done by 4 PM, it is a Monday task. Own that.",
+        "Zack here. Friday is not a day to start debates. Finish actions.",
+        "Friday. Zack here. Your last update should be your clearest.",
+        "Zack here. No long emails on Friday afternoon. Short and closed.",
+        "Friday. Zack here. Good Friday culture is calm, not chaotic.",
+        "Zack here. If you are waiting for someone, set a reminder for Monday and move on.",
+        "Friday. Zack here. Your weekend brain needs permission to stop. Give it now.",
+        "Zack here. Done tasks on Friday feel better than done tasks any other day.",
+        "Friday. Zack here. No half-written documents left open over weekend.",
+        "Zack here. Friday shutdown — check, save, close, sign off.",
+        "Friday. Zack here. Your future self will appreciate the clarity.",
+        "Zack here. One sentence status per project. No more.",
+        "Friday. Zack here. If it can wait, let it wait professionally.",
+        "Zack here. Friday is not a ghost day. Show up, finish, leave.",
+        "Friday. Zack here. Your off-time starts exactly when you log off. Not earlier.",
+        "Zack here. Do not create Monday stress on Friday. Just close.",
+        "Friday. Zack here. Clean exit is a sign of professionalism.",
+        "Zack here. Friday wins are real. Log them.",
+        "Friday. Zack here. No surprises left uncommunicated before weekend.",
+        "Zack here. Your team’s Monday depends on your Friday closure.",
+        "Friday. Zack here. One final check of shared drives and task boards.",
+        "Zack here. Friday is for gratitude, not grudges.",
+        "Friday. Zack here. Good week. Now go be offline.",
+        "Zack here. No work messages after 6 PM on Friday. Protect everyone’s peace.",
+        "Friday. Zack here. Your brain needs two full days off. Help it.",
+        "Zack here. Friday afternoon cleanup is mandatory. Overtime is not.",
+        "Friday. Zack here. Monday problems are for Monday. Close Friday now.",
+        "Zack here. Your out-of-office should include who to contact urgently.",
+        "Friday. Zack here. Great week, team. Shut down with intention.",
+        "Zack here. Friday closure checklist complete. Logging off.",
+        "Friday. Zack here. See you Monday. Do not think about work until then.",
+        "Zack here. Final Friday reminder — rest is productive. Enjoy your weekend."
+    ]
+};
+
+// ========== ZACK BOT - CORRECT VERSION ==========
+function getZackMessageByTime() {
+    const now = new Date();
+    const hour = now.getHours();
+    const day = now.getDay();
+    
+    // Weekends: No messages
+    if (day === 0 || day === 6) return null;
+    
+    // Friday: 08:00 - 13:00 only
+    if (day === 5) {
+        if (hour >= 8 && hour < 13) {
+            return zackMessages.friday[Math.floor(Math.random() * zackMessages.friday.length)];
+        }
+        return null;
+    }
+    
+    // Monday - Thursday: 08:00 - 16:00
+    if (day >= 1 && day <= 4) {
+        if (hour >= 8 && hour < 10) {
+            return zackMessages.morning[Math.floor(Math.random() * zackMessages.morning.length)];
+        } else if (hour >= 10 && hour < 12) {
+            return zackMessages.midmorning[Math.floor(Math.random() * zackMessages.midmorning.length)];
+        } else if (hour >= 12 && hour < 14) {
+            return zackMessages.afternoon[Math.floor(Math.random() * zackMessages.afternoon.length)];
+        } else if (hour >= 14 && hour < 16) {
+            return zackMessages.closing[Math.floor(Math.random() * zackMessages.closing.length)];
+        }
+    }
+    
+    return null; // Outside working hours
+}
+
+async function sendZackMessage() {
+    const messageText = getZackMessageByTime();
+    if (!messageText) return; // Not time for a message
+    
+    // Check if Zack already sent a message in the last hour
+    const oneHourAgo = new Date();
+    oneHourAgo.setHours(oneHourAgo.getHours() - 1);
+    
+    const { data: recentMessages } = await db
+        .from('messages')
+        .select('id')
+        .eq('is_bot', true)
+        .eq('author_name', ZACK.name)
+        .gte('created_at', oneHourAgo.toISOString());
+    
+    // Only send if no message in the last hour
+    if (recentMessages && recentMessages.length > 0) {
+        console.log("Zack already sent a message recently");
+        return;
+    }
+    
+    // Send the message
+    await db.from('messages').insert([{
+        content: messageText,
+        author_name: ZACK.name,
+        author_dept: ZACK.department,
+        profile_image: ZACK.profile,
+        recipient_type: "all",
+        is_bot: true,
+        created_at: new Date()
+        // NO expires_at - messages stay forever
+    }]);
+    
+    console.log(`Zack sent at ${new Date().toLocaleTimeString()}: ${messageText.substring(0, 40)}...`);
+}
+
+function startZackBot() {
+    // Check immediately on login
+    setTimeout(() => sendZackMessage(), 3000);
+    
+    // Check every 30 minutes
+    setInterval(() => sendZackMessage(), 30 * 60 * 1000);
+}
+
+const messageSound = new Audio('/audio/message.mp3');
+
+function initOnlineTracking() {
+    if (!currentUser) return;
+
+    presenceChannel = db.channel('online-users', {
+        config: {
+            presence: { key: currentUser.access_code }
+        }
+    });
+
+    presenceChannel
+        .on('presence', { event: 'sync' }, () => {
+            onlineUsers = presenceChannel.presenceState();
+
+            const count = Object.keys(onlineUsers).length;
+
+            document.getElementById('onlineCount').textContent = count;
+
+            renderOnlineUsers();
+        })
+        .subscribe(async (status) => {
+            if (status === 'SUBSCRIBED') {
+                await presenceChannel.track({
+                user: currentUser.full_name,
+                department: currentUser.department,
+                profile_image: currentUser.profile_image || null,
+                online_at: new Date().toISOString()
+            }); 
+            }
+        });
+}
+
+function renderOnlineUsers() {
+
+    const list = document.getElementById('onlineUsersList');
+
+    const users = Object.values(onlineUsers);
+
+    if (!users.length) {
+
+        list.innerHTML = `
+            <div style="text-align:center;color:#666;padding:20px;">
+                Nobody online
+            </div>
+        `;
+
+        return;
+    }
+
+    let html = '';
+
+    users.forEach(userArray => {
+
+        const user = userArray[0];
+
+        if (!user) return;
+
+        html += `
+            <div
+                style="
+                    display:flex;
+                    align-items:center;
+                    gap:12px;
+                    padding:12px;
+                    border-bottom:1px solid #f1f3f5;
+                "
+            >
+
+                <div
+                    style="
+                        width:42px;
+                        height:42px;
+                        border-radius:50%;
+                        overflow:hidden;
+                        background:#007749;
+                        color:white;
+                        display:flex;
+                        align-items:center;
+                        justify-content:center;
+                        font-weight:700;
+                        flex-shrink:0;
+                    "
+                >
+
+                    ${
+                        user.profile_image
+                        ? `
+                            <img
+                                src="${escapeHtml(user.profile_image)}"
+                                style="
+                                    width:100%;
+                                    height:100%;
+                                    object-fit:cover;
+                                "
+                            >
+                        `
+                        : user.user.charAt(0).toUpperCase()
+                    }
+
+                </div>
+
+                <div style="flex:1;">
+                    <div style="font-weight:600;">
+                        ${escapeHtml(user.user)}
+                    </div>
+
+                    <small style="color:#666;">
+                        ${escapeHtml(user.department || '')}
+                    </small>
+
+                    <br>
+
+                    <small style="color:#2ecc71;">
+                        Online
+                    </small>
+                </div>
+
+            </div>
+        `;
+    });
+
+    list.innerHTML = html;
+}
+    
+    function showToast(msg, isError) {
+        let toast = document.createElement('div');
+        toast.className = 'position-fixed bottom-0 start-50 translate-middle-x mb-4 p-2 rounded-4 text-white text-center';
+        toast.style.backgroundColor = isError ? '#dc3545' : '#007749';
+        toast.style.zIndex = 9999;
+        toast.style.padding = '6px 20px';
+        toast.style.borderRadius = '40px';
+        toast.style.fontSize = '0.8rem';
+        toast.innerText = msg;
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 2700);
+    }
+    
+    async function deleteOldMessages() {
+
+    if (!currentUser) return;
+
+    const expiryDate = new Date();
+
+    expiryDate.setHours(expiryDate.getHours() - 120);
+
+    const { data: oldMessages, error: fetchError } = await db
+        .from('messages')
+        .select('*')
+        .lt('created_at', expiryDate.toISOString());
+
+    if (fetchError) {
+        console.warn("Fetch old messages error:", fetchError);
+        return;
+    }
+
+    if (!oldMessages || oldMessages.length === 0) {
+        return;
+    }
+
+    for (const msg of oldMessages) {
+
+        if (msg.content && msg.content.includes('supabase')) {
+
+            try {
+
+                const fileName =
+                    msg.content.split('/').pop().split('?')[0];
+
+                if (fileName) {
+                    await db.storage
+                        .from('chat-files')
+                        .remove([fileName]);
+                }
+
+            } catch (err) {
+                console.warn("File delete error:", err);
+            }
+        }
+
+        if (msg.image_url) {
+
+            try {
+
+                const fileName =
+                    msg.image_url.split('/').pop().split('?')[0];
+
+                if (fileName) {
+                    await db.storage
+                        .from('chat-files')
+                        .remove([fileName]);
+                }
+
+            } catch (err) {
+                console.warn("Image delete error:", err);
+            }
+        }
+    }
+
+    const { error: deleteError } = await db
+        .from('messages')
+        .delete()
+        .lt('created_at', expiryDate.toISOString());
+
+    if (deleteError) {
+        console.warn("Delete old messages error:", deleteError);
+    } else {
+        console.log("Old messages cleaned");
+    }
+}
+
+    async function loadDepartments() {
+        if (!currentUser) return;
+        let { data } = await db.from('management_staff').select('department');
+        if (data) {
+            let unique = [...new Set(data.map(d => d.department))];
+            allDepartments = unique;
+            let select = document.getElementById('targetDeptSelect');
+            let opts = '<option value="">Select department...</option>';
+            for (let dept of unique) {
+                if (dept !== currentUser.department) opts += `<option value="${escapeHtml(dept)}">${escapeHtml(dept)}</option>`;
+            }
+            select.innerHTML = opts;
+        }
+    }
+    
+    async function login() {
+        let code = document.getElementById('accessCode').value.trim();
+        if (!code || code.length !== 4) { showToast("Enter 4-digit code", true); return; }
+        let { data, error } = await db.from('management_staff').select('*').eq('access_code', code).eq('is_active', true).single();
+        if (error || !data) { showToast("Invalid or inactive code", true); return; }
+        currentUser = data; updateProfileButton();
+        localStorage.setItem('mgmt_code', code);
+        document.getElementById('loginPanel').style.display = 'none';
+        document.getElementById('chatArea').style.display = 'block';
+        document.getElementById('inputBar').style.display = 'block';
+        document.getElementById('deptSelector').style.display = 'flex';
+        document.getElementById('userName').innerHTML = `${escapeHtml(currentUser.full_name)} (${escapeHtml(currentUser.department)})`;
+        await loadDepartments();
+        await deleteOldMessages();
+        await loadMessages();
+        subscribeToMessages();
+        startAutoRefresh();
+        initOnlineTracking();
+        initTypingIndicator();
+        enableNotifications();
+        startZackBot();
+    }
+
+    window.reactToMessage = async function(messageId, emoji) {
+    const { data: msg } = await db
+        .from('messages')
+        .select('reactions, reacted_users')
+        .eq('id', messageId)
+        .single();
+
+    let reactions = msg.reactions || {};
+    let reactedUsers = msg.reacted_users || {};
+
+    if (reactedUsers[currentUser.access_code]) return;
+
+    reactions[emoji] = (reactions[emoji] || 0) + 1;
+    reactedUsers[currentUser.access_code] = emoji;
+
+    await db.from('messages')
+        .update({
+            reactions,
+            reacted_users: reactedUsers
+        })
+        .eq('id', messageId);
+
+    loadMessages();
+};
+
+let typingChannel = null;
+let typingTimeout = null;
+
+function initTypingIndicator() {
+    if (!currentUser) return;
+
+    typingChannel = db.channel('typing-room');
+
+    typingChannel
+        .on('broadcast', { event: 'typing' }, ({ payload }) => {
+            if (payload.user === currentUser.full_name) return;
+
+            const indicator = document.getElementById('typingIndicator');
+            indicator.textContent = `${payload.user} is typing...`;
+            indicator.style.display = 'block';
+
+            clearTimeout(typingTimeout);
+
+            typingTimeout = setTimeout(() => {
+                indicator.style.display = 'none';
+            }, 2000);
+        })
+        .subscribe();
+}
+    
+    function startAutoRefresh() {
+        if (refreshInterval) clearInterval(refreshInterval);
+        refreshInterval = setInterval(async () => {
+            await loadMessages();
+            await deleteOldMessages();
+        }, 10000);
+    }
+
+    async function saveProfileImage() {
+
+    if (!currentUser) return;
+
+    const file =
+        document.getElementById('profileImageInput').files[0];
+
+    if (!file) {
+        showToast("Select image first", true);
+        return;
+    }
+
+    showToast("Uploading profile image...");
+
+    const cleanName = file.name
+        .replace(/[^a-zA-Z0-9.\-_]/g, '_')
+        .replace(/_+/g, '_');
+
+    const fileName =
+        "profile_" +
+        currentUser.access_code +
+        "_" +
+        Date.now() +
+        "_" +
+        cleanName;
+
+    const { error: uploadError } = await db.storage
+        .from('profile-images')
+        .upload(fileName, file);
+
+    if (uploadError) {
+        showToast("Upload failed", true);
+        console.error(uploadError);
+        return;
+    }
+
+    const { data } = db.storage
+    .from('profile-images')
+        .getPublicUrl(fileName);
+
+    const imageUrl = data.publicUrl;
+
+    const { error } = await db
+        .from('management_staff')
+        .update({
+            profile_image: imageUrl
+        })
+        .eq('access_code', currentUser.access_code);
+
+    if (error) {
+        showToast("Failed to save profile", true);
+        return;
+    }
+
+    currentUser.profile_image = imageUrl;
+
+await db
+    .from('messages')
+    .update({
+        profile_image: imageUrl
+    })
+    .eq('author_name', currentUser.full_name);
+
+if (presenceChannel) {
+
+    await presenceChannel.untrack();
+
+    await presenceChannel.track({
+        user: currentUser.full_name,
+        department: currentUser.department,
+        profile_image: imageUrl,
+        online_at: new Date().toISOString()
+    });
+}
+
+updateProfileButton();
+
+renderOnlineUsers();
+
+document
+    .getElementById('profileModal')
+    .classList.remove('active');
+
+showToast("Profile updated");
+
+await loadMessages();
+}
+
+async function removeProfileImage() {
+
+    if (!currentUser) return;
+
+    if (!currentUser.profile_image) {
+
+        showToast("No profile image");
+
+        return;
+    }
+
+    try {
+
+        const fileName =
+            currentUser.profile_image
+                .split('/')
+                .pop()
+                .split('?')[0];
+
+        await db.storage
+            .from('profile-images')
+            .remove([fileName]);
+
+        await db
+            .from('management_staff')
+            .update({
+                profile_image: null
+            })
+            .eq('access_code', currentUser.access_code);
+
+        currentUser.profile_image = null;
+
+await db
+    .from('messages')
+    .update({
+        profile_image: null
+    })
+    .eq('author_name', currentUser.full_name);
+
+if (presenceChannel) {
+
+    await presenceChannel.untrack();
+
+    await presenceChannel.track({
+        user: currentUser.full_name,
+        department: currentUser.department,
+        profile_image: null,
+        online_at: new Date().toISOString()
+    });
+}
+
+        updateProfileButton();
+
+        document.getElementById('profilePreviewImage').style.display = 'none';
+
+        document.getElementById('profilePreviewFallback').style.display = 'flex';
+
+        showToast("Profile image removed");
+
+    } catch (err) {
+
+        console.error(err);
+
+        showToast("Failed to remove image", true);
+    }
+}
+    
+    function getRecipientInfo() {
+        let type = document.getElementById('recipientSelect').value;
+        if (type === 'all') return { type: 'all', target: null };
+        if (type === 'my') return { type: 'my', target: currentUser.department };
+        if (type === 'specific') {
+            let targetDept = document.getElementById('targetDeptSelect').value;
+            if (!targetDept) { showToast("Pick a department", true); return null; }
+            return { type: 'specific', target: targetDept };
+        }
+        return { type: 'all', target: null };
+    }
+    
+    async function sendMessage(content, imageUrl, isVote, optA, optB) {
+        if (!currentUser) return;
+        if (!content && !imageUrl && !isVote) { showToast("Type something", true); return; }
+        let recipient = getRecipientInfo();
+        if (!recipient) return;
+        let msgData = {
+            content: content || (isVote ? "Poll:" : ""),
+            author_name: currentUser.full_name,
+            author_dept: currentUser.department,
+            profile_image: currentUser.profile_image || null,
+            reply_to: replyingTo ? replyingTo.id : null,
+            reply_content: replyingTo ? replyingTo.content : null,
+            reply_author: replyingTo ? replyingTo.author : null,
+            is_tiangmaatla: currentUser.is_tiangmaatla || false,
+            recipient_type: recipient.type,
+            target_department: recipient.target,
+            image_url: imageUrl || null,
+            is_vote: isVote || false,
+            vote_option_a: optA || null,
+            vote_option_b: optB || null,
+            vote_a_count: 0,
+            vote_b_count: 0,
+            users_voted: [],
+            created_at: new Date()
+        };
+        let { error } = await db.from('messages').insert([msgData]); 
+        if (error) { showToast("Error: " + error.message, true); return; }
+        document.getElementById('messageInput').value = '';
+        const messageInput = document.getElementById('messageInput');
+
+        messageInput.style.height = 'auto';
+        messageInput.rows = 1;
+    
+        replyingTo = null;
+        document.getElementById('replyPreview').style.display = 'none';
+        await loadMessages();
+    }
+    
+    window.castVote = async function(messageId, side) {
+        if (!currentUser) return;
+        let { data: msg } = await db.from('messages').select('users_voted, vote_a_count, vote_b_count').eq('id', messageId).single();
+        if (!msg) return;
+        if (msg.users_voted && msg.users_voted.includes(currentUser.access_code)) { showToast("Already voted", true); return; }
+        let newA = msg.vote_a_count || 0, newB = msg.vote_b_count || 0;
+        if (side === 'A') newA++; else newB++;
+        let newVoters = (msg.users_voted || []).concat([currentUser.access_code]);
+        await db.from('messages').update({ vote_a_count: newA, vote_b_count: newB, users_voted: newVoters }).eq('id', messageId);
+        await loadMessages();
+    };
+    
+    async function loadMessages() {
+        if (!currentUser) return;
+        let { data } = await db.from('messages').select('*').order('created_at', { ascending: true });
+        let filtered = (data || []).filter(msg => 
+            msg.recipient_type === 'all' ||
+            (msg.recipient_type === 'my' && msg.target_department === currentUser.department) ||
+            (msg.recipient_type === 'specific' && msg.target_department === currentUser.department) ||
+            msg.author_name === currentUser.full_name
+        );
+
+        const now = new Date();
+
+        const searchValue = document
+    .getElementById('searchInput')
+    .value
+    .toLowerCase()
+    .trim();
+
+if (searchValue) {
+    filtered = filtered.filter(msg =>
+        (msg.content || '').toLowerCase().includes(searchValue) ||
+        (msg.author_name || '').toLowerCase().includes(searchValue) ||
+        (msg.author_dept || '').toLowerCase().includes(searchValue)
+    );
+}
+
+        for (let msg of filtered) {
+    if (!msg.seen_by) msg.seen_by = [];
+
+    if (
+        msg.author_name !== currentUser.full_name &&
+        !msg.seen_by.includes(currentUser.access_code)
+    ) {
+        await db
+            .from('messages')
+            .update({
+                seen_by: [...msg.seen_by, currentUser.access_code]
+            })
+            .eq('id', msg.id);
+    }
+}
+
+if (lastMessageCount > 0 && filtered.length > lastMessageCount) {
+
+    let newestMsg = filtered[filtered.length - 1];
+
+    if (
+        newestMsg.author_name !== currentUser.full_name
+    ) {
+
+        showNotificationIfNeeded(newestMsg);
+
+        if (!windowFocused) {
+
+            unreadMessages++;
+
+            updateNotificationBadge();
+        }
+    }
+}
+
+lastMessageCount = filtered.length;
+
+        renderMessages(filtered);
+    }
+    
+    function renderMessages(messages) {
+        let container = document.getElementById('messagesList');
+        if (!messages.length) { container.innerHTML = '<div class="text-center text-muted py-5"><i class="fas fa-comments fa-2x mb-2"></i><p>No messages yet</p></div>'; return; }
+        let html = '';
+        for (let msg of messages) {
+            let isMine = msg.author_name === currentUser.full_name;
+            let messageDate = new Date(msg.created_at);
+        let today = new Date();
+        let yesterday = new Date(today);
+        yesterday.setDate(yesterday.getDate() - 1);
+
+        let dateString = '';
+        if (messageDate.toDateString() === today.toDateString()) {
+            dateString = 'Today';
+        } else if (messageDate.toDateString() === yesterday.toDateString()) {
+            dateString = 'Yesterday';
+        } else {
+            dateString = messageDate.toLocaleDateString([], { month: 'short', day: 'numeric' });
+        }
+        let timeString = messageDate.toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
+        let date = `${dateString} at ${timeString}`;
+            let deletedTime = msg.deleted_at
+            ? new Date(msg.deleted_at).toLocaleTimeString([], {
+                hour: '2-digit',
+                minute: '2-digit'
+            })
+            : '';
+            let initial = msg.author_name.charAt(0).toUpperCase();
+            let recipientIcon = msg.recipient_type === 'all' ? 'All dept' : (msg.recipient_type === 'my' ? 'My Dept' : `Specific dept ${msg.target_department}`);
+            let tiangBadge = msg.is_tiangmaatla ? '<span class="dept-tag tiangmaatla-tag"> Tiang</span>' : '';
+            let contentHtml = '';
+
+            if (
+                (msg.content || '').includes('.webm') ||
+                    (msg.content || '').includes('audio')
+                ) {
+                contentHtml = `
+                    <audio controls style="width:100%;margin-top:6px;">
+                        <source src="${escapeHtml(msg.content)}" type="audio/webm">
+                    </audio>
+                `;
+            } else {
+                contentHtml = `<div class="message-text">${formatMessageContent(msg.content)}</div>`;
+            }
+            function formatMessageContent(text) {
+                if (!text) return '';
+
+                let safe = escapeHtml(text);
+
+                safe = safe.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+
+                safe = safe.replace(/_(.*?)_/g, '<em>$1</em>');
+
+                safe = safe.replace(/~(.*?)~/g, '<del>$1</del>');
+
+                const urlRegex = /(https?:\/\/[^\s]+)/g;
+                safe = safe.replace(urlRegex, (url) => {
+
+    const lowerUrl = url.toLowerCase();
+
+    const isImage =
+        lowerUrl.includes('.png') ||
+        lowerUrl.includes('.jpg') ||
+        lowerUrl.includes('.jpeg') ||
+        lowerUrl.includes('.gif') ||
+        lowerUrl.includes('.webp');
+
+    if (isImage) {
+
+        return `
+            <img
+                src="${url}"
+                class="message-img"
+                onclick="openImage('${url}')"
+            >
+        `;
+    }
+
+    const fileName = url.split('/').pop().split('?')[0];
+
+    return `
+        <a
+            href="${url}"
+            target="_blank"
+            class="file-link"
+        >
+            ${fileName.trim()}
+        </a>
+    `;
+});
+
+                return safe;
+            }
+
+            let replyHtml = '';
+
+            if (msg.reply_to) {
+                replyHtml = `
+                    <div style="background:#f8f9fa;padding:6px;border-radius:6px;font-size:12px;margin-bottom:6px;">
+                        <strong>${escapeHtml(msg.reply_author)}</strong><br>
+                        ${formatMessageContent(msg.reply_content)}
+                    </div>
+                `;
+            }
+            if (msg.is_vote && msg.vote_option_a && msg.vote_option_b) {
+                contentHtml = `<div class="vote-box">
+                    <div class="vote-option" onclick="castVote('${msg.id}', 'A')"><span><strong>A:</strong> ${escapeHtml(msg.vote_option_a)}</span><span class="vote-count">👍 ${msg.vote_a_count || 0}</span></div>
+                    <div class="vote-option" onclick="castVote('${msg.id}', 'B')"><span><strong>B:</strong> ${escapeHtml(msg.vote_option_b)}</span><span class="vote-count">👍 ${msg.vote_b_count || 0}</span></div>
+                    ${(msg.users_voted || []).includes(currentUser.access_code) ? '<small class="text-muted">✓ Voted</small>' : '<small class="text-muted">Tap to vote</small>'}</div>`;
+            }
+            html += `<div class="message ${isMine ? 'outgoing' : 'incoming'}"><div class="d-flex gap-2" style="max-width:88%;">${!isMine ? `<div class="avatar"> ${ msg.profile_image ? `<img src="${escapeHtml(msg.profile_image)}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">` : initial } </div>` : ''}<div class="bubble" onclick="toggleReactions('${msg.id}')" style="cursor:pointer;"><div class="author">${escapeHtml(msg.author_name)} <span class="dept-tag">${escapeHtml(msg.author_dept)}</span> ${tiangBadge} <span class="text-muted small">${recipientIcon}</span></div>${replyHtml}
+${contentHtml}${renderReactionSection(msg)}<div class="d-flex justify-content-between align-items-center mt-1">
+   <div class="time">
+   ${date}
+${isMine ? `<small style="color:#007749;">
+Seen by ${msg.seen_by ? msg.seen_by.length : 0}
+</small>` : ''}
+   ${msg.is_deleted && !isMine
+    ? `<small style="color:red;">Deleted</small>`
+    : ''}
+   ${msg.is_edited ? `<small style="color:orange;">Edited</small>` : ''}
+</div>
+   <div style="display:flex;gap:8px;align-items:center;">
+
+   ${
+      isMine
+      ? (() => {
+            let messageAge = (new Date() - new Date(msg.created_at)) / 1000 / 60;
+            if (messageAge <= 6 && !msg.is_deleted) {
+                return `
+                    <button onclick="editMessage('${msg.id}', '${escapeHtml(msg.content)}')"
+                        style="border:none;background:none;color:orange;font-size:12px;">
+                        Edit
+                    </button>
+
+                    <button onclick="deleteMessage('${msg.id}')"
+                        style="border:none;background:none;color:red;font-size:12px;">
+                        Delete
+                    </button>
+                `;
+            } else {
+                return `
+                    <button disabled
+                        style="border:none;background:none;color:gray;font-size:12px;opacity:0.5;cursor:not-allowed;">
+                        Delete
+                    </button>
+                `;
+            }
+        })()
+      : ''
+   }
+
+   <button onclick="replyToMessage(
+      '${msg.id}',
+      '${escapeHtml(msg.content)}',
+      '${escapeHtml(msg.author_name)}'
+   )"
+   style="border:none;background:none;color:#007749;font-size:12px;">
+      Reply
+   </button>
+
+</div>
+
+</div></div>${isMine ? `<div class="avatar"> ${ msg.profile_image ? `<img src="${escapeHtml(msg.profile_image)}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">` : initial } </div>` : ''}</div></div>`;
+        }
+        container.innerHTML = html;
+        document.getElementById('chatMain').scrollTop = document.getElementById('chatMain').scrollHeight;
+            document.getElementById('chatMain').addEventListener('click', () => {
+
+            unreadMessages = 0;
+
+            updateNotificationBadge();
+        });
+    }
+
+    function renderReactionSection(msg) {
+    const emojis = ["👍", "❤️", "😂", "😮"];
+    
+    return `
+        <div class="reaction-container" id="reactions-${msg.id}" style="display:none;gap:6px;flex-wrap:wrap;margin-top:6px;">
+            ${emojis.map(emoji => {
+                const count = msg.reactions?.[emoji] || 0;
+
+                return `
+                    <button class="reaction-btn"
+                        onclick="reactToMessage('${msg.id}','${emoji}')">
+                        ${emoji} ${count > 0 ? count : ''}
+                    </button>
+                `;
+            }).join('')}
+        </div>
+    `;
+}
+
+window.deleteMessage = async function(messageId) {
+    let { data: msg } = await db.from('messages').select('created_at').eq('id', messageId).single();
+    if (!msg) return;
+    
+    let messageAge = (new Date() - new Date(msg.created_at)) / 1000 / 60;
+    if (messageAge > 6) {
+        showToast("Cannot delete messages older than 6 minutes", true);
+        return;
+    }
+    
+    if (!confirm("Delete this message?")) return;
+
+    const { error } = await db
+        .from('messages')
+        .update({
+            content: "🚫 This message was deleted",
+            image_url: null,
+            is_deleted: true,
+            deleted_at: new Date().toISOString()
+        })
+        .eq('id', messageId);
+
+    if (error) {
+        showToast("Failed to delete", true);
+        return;
+    }
+
+    showToast("Message deleted");
+    loadMessages();
+};
+
+window.editMessage = async function(messageId, oldText) {
+    const newText = prompt("Edit message:", oldText);
+
+    if (!newText) return;
+    if (newText.trim() === oldText.trim()) return;
+
+    const { error } = await db
+        .from('messages')
+        .update({
+            content: newText.trim(),
+            is_edited: true,
+            edited_at: new Date().toISOString()
+        })
+        .eq('id', messageId);
+
+    if (error) {
+        showToast("Edit failed", true);
+        return;
+    }
+
+    showToast("Message updated");
+    loadMessages();
+};
+    
+    function subscribeToMessages() {
+        if (messageSubscription) messageSubscription.unsubscribe();
+        messageSubscription = db.channel('mgmt-chat').on('postgres_changes', { event: '*', schema: 'public', table: 'messages' }, () => { loadMessages(); deleteOldMessages(); }).subscribe();
+    }
+    
+    function escapeHtml(str) { if (!str) return ''; return str.replace(/[&<>]/g, m => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;' }[m])); }
+    window.openImage = (src) => { document.getElementById('modalImage').src = src; document.getElementById('imageModal').style.display = 'flex'; };
+    document.getElementById('imageModal').onclick = () => document.getElementById('imageModal').style.display = 'none';
+    
+    function setupEmojiPicker() {
+    const emojis = ["😀","😃","😄","😁","😆","😅","😂","🤣","🤓","😞","😫","💯","💬","💤","👋","👇","👆","❤️","👍","👎","👏","🙏","🔥","⭐","✅","🎉","🙂","☕","😊","😇","🥰","😍","🤩","😜","🤫","😷","🥵","🥳"];
+
+    let grid = document.getElementById('emojiGrid');
+    grid.innerHTML = '';
+
+    emojis.forEach(emoji => {
+        let span = document.createElement('div');
+
+        span.textContent = emoji;
+
+        span.style.width = '';
+        span.style.height = '38px';
+        span.style.display = 'flex';
+        span.style.alignItems = 'center';
+        span.style.justifyContent = 'center';
+
+        span.style.fontSize = '1.4rem';
+        span.style.cursor = 'pointer';
+        span.style.userSelect = 'none';
+
+        span.onclick = () => {
+            document.getElementById('messageInput').value += emoji;
+            document.getElementById('emojiPicker').style.display = 'none';
+            document.getElementById('messageInput').focus();
+        };
+
+        grid.appendChild(span);
+    });
+}
+    
+    document.getElementById('expandBtn').addEventListener('click', () => {
+        const drawer = document.getElementById('actionDrawer');
+        drawer.classList.toggle('open');
+        if (!drawer.classList.contains('open')) {
+            document.getElementById('emojiPicker').style.display = 'none';
+            document.getElementById('imagePanel').style.display = 'none';
+        }
+    });
+    document.getElementById('recipientSelect').addEventListener('change', function() {
+        document.getElementById('specificDeptSelector').classList.toggle('active', this.value === 'specific');
+        if (this.value === 'specific') loadDepartments();
+    });
+    document.getElementById('loginBtn').addEventListener('click', login);
+    document.getElementById('sendBtn').addEventListener('click', () => { if (isVoteMode) document.getElementById('votePopup').style.display = 'block'; else sendMessage(document.getElementById('messageInput').value.trim(), null, false); });
+    document.getElementById('messageInput').addEventListener('keypress', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); if (isVoteMode) document.getElementById('votePopup').style.display = 'block'; else sendMessage(e.target.value.trim(), null, false); } });
+    document.getElementById('emojiBtn').onclick = (e) => {
+        e.stopPropagation();
+
+        const picker = document.getElementById('emojiPicker');
+
+        picker.style.display =
+            picker.style.display === 'block'
+            ? 'none'
+            : 'block';
+    };
+    document.addEventListener('click', (e) => { if (!document.getElementById('emojiPicker').contains(e.target) && e.target !== document.getElementById('emojiBtn')) document.getElementById('emojiPicker').style.display = 'none'; });
+    document.getElementById('imageBtn').onclick = () => {
+
+    const input = document.getElementById('realFileInput');
+
+    input.accept = "image/*";
+
+    input.click();
+};
+
+document.getElementById('profileImageInput').addEventListener('change', function () {
+
+    const file = this.files[0];
+
+    if (!file) return;
+
+    const reader = new FileReader();
+
+    reader.onload = function (e) {
+
+        const preview =
+            document.getElementById('profilePreviewImage');
+
+        const fallback =
+            document.getElementById('profilePreviewFallback');
+
+        preview.src = e.target.result;
+
+        preview.style.display = 'block';
+
+        fallback.style.display = 'none';
+    };
+
+    reader.readAsDataURL(file);
+});
+
+    document.getElementById('voteToggleBtn').onclick = () => { isVoteMode = !isVoteMode; document.getElementById('voteIndicator').classList.toggle('active', isVoteMode); if (!isVoteMode) document.getElementById('votePopup').style.display = 'none'; };
+    document.getElementById('submitVoteBtn').onclick = () => { let a = document.getElementById('voteOptionA').value.trim(), b = document.getElementById('voteOptionB').value.trim(); if (!a || !b) { showToast("Both options needed", true); return; } sendMessage("", null, true, a, b); document.getElementById('votePopup').style.display = 'none'; document.getElementById('voteOptionA').value = ''; document.getElementById('voteOptionB').value = ''; isVoteMode = false; document.getElementById('voteIndicator').classList.remove('active'); };
+    document.getElementById('cancelVoteBtn').onclick = () => { document.getElementById('votePopup').style.display = 'none'; isVoteMode = false; document.getElementById('voteIndicator').classList.remove('active'); };
+    document.getElementById('messageInput').addEventListener('input', function() {
+    this.style.height = 'auto';
+    this.style.height = Math.min(this.scrollHeight, 80) + 'px';
+
+    if (typingChannel) {
+        typingChannel.send({
+            type: 'broadcast',
+            event: 'typing',
+            payload: {
+                user: currentUser.full_name
+            }
+        });
+    }
+});
+
+window.replyToMessage = function(messageId, content, author) {
+    replyingTo = {
+        id: messageId,
+        content: content,
+        author: author
+    };
+
+    document.getElementById('replyPreview').style.display = 'block';
+    document.getElementById('replyText').innerHTML =
+        `<strong>Replying to ${author}</strong><br>${content}`;
+};
+
+window.cancelReply = function() {
+    replyingTo = null;
+    document.getElementById('replyPreview').style.display = 'none';
+};
+
+document.getElementById('searchInput').addEventListener('input', function() {
+    loadMessages();
+});
+    
+    setupEmojiPicker();
+    let savedCode = localStorage.getItem('mgmt_code');
+    if (savedCode) { document.getElementById('accessCode').value = savedCode; login(); }
+
+    document.getElementById('profileBtn').addEventListener('click', () => {
+    document.getElementById('profileModal').classList.add('active');
+});
+
+document.getElementById('closeProfileModal').addEventListener('click', () => {
+    document.getElementById('profileModal').classList.remove('active');
+});
+
+document.getElementById('onlineUsersBadge').addEventListener('click', () => {
+
+    renderOnlineUsers();
+
+    document.getElementById('onlineUsersModal').style.display = 'flex';
+});
+
+document.getElementById('closeOnlineUsersModal').addEventListener('click', () => {
+
+    document.getElementById('onlineUsersModal').style.display = 'none';
+});
+
+document.getElementById('onlineUsersModal').addEventListener('click', (e) => {
+
+    if (e.target.id === 'onlineUsersModal') {
+
+        document.getElementById('onlineUsersModal').style.display = 'none';
+    }
+});
+
+document.getElementById('docBtn').onclick = () => {
+    document.getElementById('realFileInput').click();
+};
+
+let mediaRecorder;
+let recordingInterval = null;
+let recordingSeconds = 0;
+let audioChunks = [];
+let recordedAudioBlob = null;
+
+document.getElementById('voiceBtn').onclick = () => {
+    const panel = document.getElementById('voicePanel');
+    panel.style.display =
+        panel.style.display === 'block' ? 'none' : 'block';
+};
+
+document.getElementById('startRecordBtn').onclick = async () => {
+
+    recordingSeconds = 0;
+
+    const recordingTime = document.getElementById('recordingTime');
+
+    recordingInterval = setInterval(() => {
+
+        recordingSeconds++;
+
+        const mins = String(Math.floor(recordingSeconds / 60)).padStart(2,'0');
+        const secs = String(recordingSeconds % 60).padStart(2,'0');
+
+        recordingTime.textContent = `${mins}:${secs}`;
+
+    }, 1000);
+
+    const stream = await navigator.mediaDevices.getUserMedia({
+        audio: true
+    });
+
+    mediaRecorder = new MediaRecorder(stream);
+
+    audioChunks = [];
+
+    mediaRecorder.ondataavailable = e => {
+        audioChunks.push(e.data);
+    };
+
+    mediaRecorder.onstop = () => {
+
+        clearInterval(recordingInterval);
+
+        recordedAudioBlob = new Blob(audioChunks, {
+            type: 'audio/webm'
+        });
+
+        const audioUrl = URL.createObjectURL(recordedAudioBlob);
+
+        document.getElementById('audioPreview').src = audioUrl;
+        document.getElementById('audioPreview').style.display = 'block';
+
+        document.getElementById('sendVoiceBtn').style.display = 'block';
+    };
+
+    mediaRecorder.start();
+
+    showToast("Recording started");
+};
+
+document.getElementById('stopRecordBtn').onclick = () => {
+
+    if (mediaRecorder) {
+
+        mediaRecorder.stop();
+
+        clearInterval(recordingInterval);
+
+        showToast("Recording stopped");
+    }
+};
+
+document.getElementById('sendVoiceBtn').onclick = async () => {
+
+    if (!recordedAudioBlob) return;
+
+    showToast("Uploading voice note...");
+
+    try {
+
+        const fileName =
+            "voice_" +
+            Date.now() +
+            "_" +
+            currentUser.access_code +
+            ".webm";
+
+        const { error: uploadError } = await db.storage
+            .from('chat-files')
+            .upload(fileName, recordedAudioBlob, {
+                contentType: 'audio/webm'
+            });
+
+        if (uploadError) {
+
+            console.error(uploadError);
+
+            showToast("Voice upload failed", true);
+
+            return;
+        }
+
+        const { data } = db.storage
+            .from('chat-files')
+            .getPublicUrl(fileName);
+
+        const audioUrl = data.publicUrl;
+
+        await sendMessage(audioUrl, null, false);
+
+        document.getElementById('voicePanel').style.display = 'none';
+
+        document.getElementById('audioPreview').style.display = 'none';
+
+        document.getElementById('audioPreview').src = '';
+
+        document.getElementById('sendVoiceBtn').style.display = 'none';
+
+        recordedAudioBlob = null;
+
+        showToast("Voice note sent");
+
+    } catch (err) {
+
+        console.error(err);
+
+        showToast("Voice upload failed", true);
+    }
+};
+
+
+async function enableNotifications() {
+    if ('Notification' in window) {
+        const permission = await Notification.requestPermission();
+        if (permission === 'granted') {
+            console.log('Notifications enabled');
+        }
+    }
+}
+
+function showNotificationIfNeeded(msg) {
+    if (!currentUser) return;
+    if (msg.author_name === currentUser.full_name) return;
+    if (document.hasFocus()) return;
+
+    messageSound.play().catch(() => {});
+    
+    if (Notification.permission === 'granted') {
+        let shortMsg = msg.content ? msg.content.substring(0, 100) : 'New message';
+        new Notification('📨 New message from ' + msg.author_name, {
+            body: shortMsg,
+            icon: 'https://cdn-icons-png.flaticon.com/512/4712/4712109.png',
+            tag: 'chat-message',
+            vibrate: [200, 100, 200]
+        });
+    }
+}
+
+function toggleReactions(messageId) {
+    const reactionsDiv = document.getElementById(`reactions-${messageId}`);
+    if (reactionsDiv) {
+        if (reactionsDiv.style.display === 'none') {
+            reactionsDiv.style.display = 'flex';
+        } else {
+            reactionsDiv.style.display = 'none';
+        }
+    }
+}
+
+function goFullScreen() {
+    const elem = document.documentElement;
+
+    if (elem.requestFullscreen) {
+        elem.requestFullscreen();
+    } else if (elem.webkitRequestFullscreen) {
+        elem.webkitRequestFullscreen(); 
+    } else if (elem.msRequestFullscreen) {
+        elem.msRequestFullscreen();
+    }
+}
+
+function updateProfileButton() {
+    const img = document.getElementById('profileBtnImage');
+    const icon = document.getElementById('profileBtnIcon');
+
+    if (currentUser && currentUser.profile_image) {
+        img.src = currentUser.profile_image;
+        img.style.display = 'block';
+        icon.style.display = 'none';
+    } else {
+        img.style.display = 'none';
+        icon.style.display = 'block';
+    }
+}
+
+function updateNotificationBadge() {
+
+    const badge = document.getElementById('profileNotificationBadge');
+
+    if (unreadMessages > 0) {
+
+        badge.style.display = 'flex';
+
+        badge.textContent =
+            unreadMessages > 99
+            ? '99+'
+            : unreadMessages;
+
+    } else {
+
+        badge.style.display = 'none';
+    }
+}
+
+window.addEventListener('focus', () => {
+
+    windowFocused = true;
+
+    unreadMessages = 0;
+
+    updateNotificationBadge();
+});
+
+window.addEventListener('blur', () => {
+
+    windowFocused = false;
+});
+
+document.getElementById('realFileInput').addEventListener('change', async function () {
+
+    const file = this.files[0];
+
+    if (!file) return;
+
+    const MAX_IMAGE_SIZE = 5 * 1024 * 1024;
+    const MAX_FILE_SIZE = 10 * 1024 * 1024;
+
+    const isImage = file.type.startsWith('image/');
+
+    if (isImage && file.size > MAX_IMAGE_SIZE) {
+        showToast("Image too large (max 5MB)", true);
+        return;
+    }
+
+    if (!isImage && file.size > MAX_FILE_SIZE) {
+        showToast("File too large (max 10MB)", true);
+        return;
+    }
+
+    if (file.name.includes('<') || file.name.includes('>')) {
+    showToast("Invalid file name", true);
+    return;
+}
+
+    showToast("Uploading file...");
+
+    const cleanName = file.name
+    .replace(/[^a-zA-Z0-9.\-_]/g, '_')  
+    .replace(/_+/g, '_');              
+
+    const fileName = Date.now() + "_" + cleanName;
+
+    const { error } = await db.storage
+        .from('chat-files')
+        .upload(fileName, file);
+
+    if (error) {
+        showToast("Upload failed", true);
+        console.error(error);
+        return;
+    }
+
+    const { data } = db.storage
+        .from('chat-files')
+        .getPublicUrl(fileName);
+
+    await sendMessage(data.publicUrl, null, false);
+
+    showToast("File uploaded");
+});
+
+setTimeout(() => {
+    document.getElementById('appTitle').textContent = 'Tiangmaatla chats';
+}, 10000);
+</script>
+</body>
+</html>
