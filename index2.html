@@ -1144,6 +1144,7 @@
     let replyingTo = null;
     let allDepartments = [];
     let refreshInterval = null;
+    let zackInterval = null;
 
     let presenceChannel = null;
     let onlineUsers = {};
@@ -1656,81 +1657,103 @@ const zackMessages = {
     ]
 };
 
-// ========== ZACK BOT - CORRECT VERSION ==========
-function getZackMessageByTime() {
-    const now = new Date();
-    const hour = now.getHours();
-    const day = now.getDay();
-    
-    // Weekends: No messages
-    if (day === 0 || day === 6) return null;
-    
-    // Friday: 08:00 - 13:00 only
-    if (day === 5) {
-        if (hour >= 8 && hour < 13) {
-            return zackMessages.friday[Math.floor(Math.random() * zackMessages.friday.length)];
-        }
-        return null;
-    }
-    
-    // Monday - Thursday: 08:00 - 16:00
-    if (day >= 1 && day <= 4) {
-        if (hour >= 8 && hour < 10) {
-            return zackMessages.morning[Math.floor(Math.random() * zackMessages.morning.length)];
-        } else if (hour >= 10 && hour < 12) {
-            return zackMessages.midmorning[Math.floor(Math.random() * zackMessages.midmorning.length)];
-        } else if (hour >= 12 && hour < 14) {
-            return zackMessages.afternoon[Math.floor(Math.random() * zackMessages.afternoon.length)];
-        } else if (hour >= 14 && hour < 16) {
-            return zackMessages.closing[Math.floor(Math.random() * zackMessages.closing.length)];
-        }
-    }
-    
-    return null; // Outside working hours
-}
-
 async function sendZackMessage() {
-    const messageText = getZackMessageByTime();
-    if (!messageText) return; // Not time for a message
-    
-    // Check if Zack already sent a message in the last hour
-    const oneHourAgo = new Date();
-    oneHourAgo.setHours(oneHourAgo.getHours() - 1);
-    
-    const { data: recentMessages } = await db
-        .from('messages')
-        .select('id')
-        .eq('is_bot', true)
-        .eq('author_name', ZACK.name)
-        .gte('created_at', oneHourAgo.toISOString());
-    
-    // Only send if no message in the last hour
-    if (recentMessages && recentMessages.length > 0) {
-        console.log("Zack already sent a message recently");
-        return;
-    }
-    
-    // Send the message
-    await db.from('messages').insert([{
-        content: messageText,
-        author_name: ZACK.name,
-        author_dept: ZACK.department,
-        profile_image: ZACK.profile,
-        recipient_type: "all",
-        is_bot: true,
-        created_at: new Date()
-        // NO expires_at - messages stay forever
-    }]);
-    
-    console.log(`Zack sent at ${new Date().toLocaleTimeString()}: ${messageText.substring(0, 40)}...`);
+
+if (!currentUser) return;
+
+const now = new Date();
+
+const day = now.getDay();
+const hour = now.getHours();
+
+let currentPeriod = null;
+
+// weekends
+if (day === 0 || day === 6) {
+    return;
 }
 
-function startZackBot() {
-    // Check immediately on login
-    setTimeout(() => sendZackMessage(), 3000);
-    
-    // Check every 30 minutes
-    setInterval(() => sendZackMessage(), 30 * 60 * 1000);
+// friday
+if (day === 5) {
+
+    if (hour >= 8 && hour < 10) {
+        currentPeriod = "morning";
+    }
+
+    else if (hour >= 10 && hour < 12) {
+        currentPeriod = "midmorning";
+    }
+
+    else if (hour >= 12 && hour < 13) {
+        currentPeriod = "friday";
+    }
+}
+
+// monday-thursday
+else {
+
+    if (hour >= 8 && hour < 10) {
+        currentPeriod = "morning";
+    }
+
+    else if (hour >= 10 && hour < 12) {
+        currentPeriod = "midmorning";
+    }
+
+    else if (hour >= 12 && hour < 14) {
+        currentPeriod = "afternoon";
+    }
+
+    else if (hour >= 14 && hour < 16) {
+        currentPeriod = "closing";
+    }
+}
+
+// outside office hours
+if (!currentPeriod) {
+    return;
+}
+
+const todayDate =
+new Date().toISOString().split('T')[0];
+
+const { data: existing } = await db
+.from('messages')
+.select('id')
+.eq('is_bot', true)
+.eq('bot_period', currentPeriod)
+.eq('bot_date', todayDate)
+.maybeSingle();
+
+// already exists
+if (existing) {
+    return;
+}
+
+// choose message pool
+const pool = zackMessages[currentPeriod];
+
+if (!pool || !pool.length) {
+    return;
+}
+
+const randomMessage =
+    pool[Math.floor(Math.random() * pool.length)];
+
+// insert message
+await db.from('messages').insert([{
+    content: randomMessage,
+    author_name: ZACK.name,
+    author_dept: ZACK.department,
+    profile_image: ZACK.profile,
+    recipient_type: "all",
+    is_bot: true,
+    bot_period: currentPeriod,
+    bot_date: new Date().toISOString().split('T')[0],
+    created_at: new Date()
+}]);
+
+
 }
 
 const messageSound = new Audio('/audio/message.mp3');
@@ -3031,9 +3054,21 @@ document.getElementById('realFileInput').addEventListener('change', async functi
     showToast("File uploaded");
 });
 
+if (!zackInterval) {
+
+sendZackMessage();
+
+zackInterval = setInterval(() => {
+    sendZackMessage();
+}, 600000);
+
+}
+
 setTimeout(() => {
     document.getElementById('appTitle').textContent = 'Tiangmaatla chats';
 }, 10000);
+
+
 </script>
 </body>
 </html>
